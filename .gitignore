@@ -1,0 +1,4 @@
+.env
+*.session
+/all_csv
+/all_json
