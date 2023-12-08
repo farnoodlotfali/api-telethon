@@ -1,4 +1,6 @@
 .env
+.venv
 *.session
 /all_csv
 /all_json
+db.sqlite3
