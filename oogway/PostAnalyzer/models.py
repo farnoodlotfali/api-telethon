@@ -11,12 +11,12 @@ class Channel(models.Model):
 
 class PostInitial(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
-    date = models.DateTimeField(editable=True)
+    date = models.DateTimeField(max_length=100, editable=True, null=True)
     channel_id = models.CharField(max_length=50)
-    message = models.CharField(max_length=6000, editable=True)
+    message = models.CharField(max_length=6000, editable=True, null=True)
     message_id = models.CharField(max_length=50)
-    reply_to_msg_id = models.CharField(max_length=15)
-    edit_date = models.CharField(max_length=100, editable=True)
+    reply_to_msg_id = models.CharField(max_length=15, null=True)
+    edit_date = models.DateTimeField(max_length=100, editable=True, null=True)
 
     def __str__(self):
         return f"{self.message_id} {self.channel_id}"

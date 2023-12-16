@@ -1,0 +1,61 @@
+{% if posts %}
+
+<!-- show posts -->
+
+<table class="table table-striped table-hover table-bordered">
+  <thead class="table-dark">
+    <tr>
+      <th scope="col">Id</th>
+      <th scope="col">Channel id</th>
+      <th scope="col">Msg id</th>
+      <th scope="col">Msg</th>
+      <th scope="col">Date</th>
+      <th scope="col">Edit date</th>
+      <th scope="col">Reply to msg id</th>
+      <th scope="col">Created At</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for record in posts %}
+    <tr>
+      <th>
+        <!-- Id -->
+        {{record.id}}
+      </th>
+      <th>
+        <!-- channel_id -->
+        {{record.channel_id}}
+      </th>
+      <th>
+        <!-- message_id -->
+        {{record.message_id}}
+      </th>
+      <th>
+        <!-- message -->
+        {{record.message}}
+      </th>
+      <th>
+        <!-- date -->
+        {{record.date}}
+      </th>
+      <th>
+        <!-- edit_date -->
+        {{record.edit_date}}
+      </th>
+      <th>
+        <!-- reply_to_msg_id -->
+        {{record.reply_to_msg_id}}
+      </th>
+      <th>
+        <!-- created_at -->
+        {{record.created_at}}
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<br />
+<br />
+
+<!-- endif  -->
+{% endif %}
