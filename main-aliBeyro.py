@@ -11,6 +11,7 @@ from telethon.tl.types import InputChannel
 from itertools import groupby
 from datetime import datetime
 from dotenv import dotenv_values
+
 # ****************************************************************************************************************************
 
 config = dotenv_values(".env")
@@ -20,13 +21,11 @@ api_hash = config["api_hash"]
 
 username = config["username"]
 client = TelegramClient(username, api_id, api_hash).start()
-# client.download_profile_photo(username)
-# messages = client.get_messages(username)
+
 
 # user_input_channel = input('enter entity(telegram URL or entity id):')
 
-user_input_channel = int(config["CHANNEL_TEST"])
-peer_channel = PeerChannel(int(config["CHANNEL_FEYZ"]))
+peer_channel = PeerChannel(int(config["CHANNEL_ALI_BEY"]))
 my_channel = client.get_entity(peer_channel)
 
 offset_id = 0
@@ -113,14 +112,36 @@ def remove():
             print("Failed to delete %s. Reason: %s" % (file_path, e))
 
 
+# will find position type
+def findPosition(msg):
+    pos = None
+    if "short" in msg.lower():
+        pos = "SHORT"
+    elif "long" in msg.lower():
+        pos = "LONG"
+
+    return pos
+
+
+# will find market name
+def findMarket(msg):
+    market = None
+    if "Futures Call".lower() in msg.lower():
+        market = "FUTURES"
+    elif "Spot".lower() in msg.lower():
+        market = "SPOT"
+
+    return market
+
+
 # determine if a message is a predict message or not
 def isPredictMsg(msg):
     patterns = [
-        r"Symbol: (.+)",
-        r"Position: (.+)",
-        r"Leverage: (.+)",
-        r"Market: (.+)",
-        r"StopLoss: (.+)",
+        r"📌 #(.+)",
+        r"Entry:(.+)",
+        r"Leverage:(.+)",
+        r"Stop : (.+)",
+        r"TP:(.+)",
     ]
 
     # Check if all patterns have a value
@@ -132,26 +153,23 @@ def predictParts(string):
     if string is None:
         return None
 
-    # print(string)
-    symbol_match = re.search(r"Symbol: (.+)", string)
-    position_match = re.search(r"Position: (.+)", string)
+    symbol_match = re.search(r"📌 #(.+)", string)
+    position_match = findPosition(string)
     leverage_match = re.search(r"Leverage: (.+)", string)
-    market_match = re.search(r"Market: (.+)", string)
-    stopLoss_match = re.search(r"StopLoss: (.+)", string)
+    market_match = findMarket(string)
+    stopLoss_match = re.search(r"Stop : (.+)", string)
 
     # Extracting values from entry targets
-    entry_targets_match = re.search(r"Entry Targets:(.+?)\n\n", string, re.DOTALL)
+    entry_targets_match = re.search(r"Entry:(.+?)\n\n", string, re.DOTALL)
     entry_values = (
-        re.findall(r"\d+\.\d+", entry_targets_match.group(1))
+        re.findall(r"\d+(?:\.\d+)?", entry_targets_match.group(1))
         if entry_targets_match
         else None
     )
 
-    take_profit_targets_match = re.search(
-        r"Take-Profit Targets:(.+?)\n\n", string, re.DOTALL
-    )
+    take_profit_targets_match = re.search(r"TP:(.+?)\n\n", string, re.DOTALL)
     profit_values = (
-        re.findall(r"\d+\.\d+", take_profit_targets_match.group(1))
+        re.findall(r"\d+(?:\.\d+)?", take_profit_targets_match.group(1))
         if take_profit_targets_match
         else None
     )
@@ -159,70 +177,29 @@ def predictParts(string):
     # Creating a dictionary
     data = {
         "Symbol": returnSearchValue(symbol_match),
-        "Position": returnSearchValue(position_match),
-        "Market": returnSearchValue(market_match),
+        "Position": position_match,
+        "Market": market_match,
         "Leverage": returnSearchValue(leverage_match),
         "StopLoss": returnSearchValue(stopLoss_match),
         "Entry Targets": [
             {"index": i, "value": value, "active": False, "Period": None, "date": None}
             for i, value in enumerate(entry_values)
-        ]
-        if entry_values
-        else None,
+        ],
         "Take-Profit Targets": [
             {"index": i, "value": value, "active": False, "Period": None, "date": None}
             for i, value in enumerate(profit_values)
         ]
         if profit_values
         else None,
-        # "Entry Targets": {f"Target {i+1}": {"value": value, "active": False, "Period": None} for i, value in enumerate(entry_values)} if entry_values else None,
-        # "Take-Profit Targets": {f"Target {i+1}": {"value": value, "active": False, "Period": None} for i, value in enumerate(profit_values)} if profit_values else None,
-        "status": "pending",
     }
 
     return data
 
 
-# check if str(msg) is a Entry point or not
-def isEntry(msg, value, symbol):
-    entry_price = returnSearchValue(re.search(r"Entry Price: (.+)", msg))
-    # for control "average entry".
-    # sth entry_price is different to value. so we should find difference, then calculate error
-    if entry_price:
-        entry_price = float(re.findall(r"\d+\.\d+", entry_price)[0])
-        bigger_number = max(entry_price, float(value))
-        smaller_number = min(entry_price, float(value))
-
-        error = 100 * (1 - (smaller_number / bigger_number)) > 1
-        if error:
-            return False
-    else:
-        return False
-
-    patterns = [
-        r"Entry(.+)",
-        rf"{symbol}",
-    ]
-
-    # Check if all patterns have a value
-
-    return all(re.search(pattern, msg) for pattern in patterns)
-
-
-# check if str(msg) is a Stoploss point or not
-def isStopLoss(msg):
-    if "Stoploss".lower() in msg.lower() or "Stop loss".lower() in msg.lower():
-        return True
-    else:
-        return False
-
-
 # check if str(msg) is a Take-Profit point or not
 def isTakeProfit(msg, symbol, index):
     patterns = [
-        r"Take-Profit(.+)",
-        r"Profit(.+)",
-        rf"target {index}",
+        rf"Full targets achieved Tp{index}(.+)",
         rf"{symbol}",
     ]
 
@@ -299,7 +276,20 @@ while not shouldStop:
 
 # ****************************************************************************************************************************
 # groupby data according to reply_to_msg_id
-total_messages = all_messages
+# total_messages = all_messages.copy()
+# total_messages.sort(
+#     key=lambda x: x["reply_to_msg_id"]
+#     if x["reply_to_msg_id"] is not None
+#     else float("-inf")
+# )
+
+# # Group the list by the "reply_to_msg_id" field
+# grouped = groupby(total_messages, key=lambda x: x["reply_to_msg_id"])
+
+# # Convert the grouped data to a JSON-serializable format
+# grouped_data = [{str(key): list(group) for key, group in grouped}]
+# del grouped_data["None"]
+total_messages = all_messages.copy()
 total_messages.sort(
     key=lambda x: x["reply_to_msg_id"]
     if x["reply_to_msg_id"] is not None
@@ -310,57 +300,40 @@ groups = groupby(total_messages, key=lambda x: x["reply_to_msg_id"])
 grouped_data = {str(key): list(group) for key, group in groups}
 del grouped_data["None"]
 
-# ****************************************************************************************************************************
+# # ****************************************************************************************************************************
+#  ali beyranvand does not sent entry msg
 for msg in predict_messages:
-    if not f'{msg["id"]}' in grouped_data:
-        continue
-
     entries = msg["predict"]["Entry Targets"]
     take_profits = msg["predict"]["Take-Profit Targets"]
     symbol = msg["predict"]["Symbol"]
-
-    all_predicts = grouped_data[f'{msg["id"]}'].copy()
-    isEntryActive = False
-
-    for i, value in enumerate(all_predicts):
-        if isStopLoss(value["message"]):
-            msg["predict"]["status"] = "failed"
-            del all_predicts[i]
-            break
-
-    for item in entries:
-        for i, value in enumerate(all_predicts):
-            if isEntry(value["message"], item["value"], symbol):
-                item["active"] = True
-                item["date"] = value["date"]
-                item["Period"] = subtractTime(msg["date"], value["date"])
-                del all_predicts[i]
-                isEntryActive = True
-                break
-
-    # there is no take-profit if none of entry points is active
-    if isEntryActive:
+    if f'{msg["id"]}' in grouped_data:
+        all_predicts = grouped_data[f'{msg["id"]}'].copy()
+        isPredictActive = False
         for j, item in enumerate(take_profits):
             for i, value in enumerate(all_predicts):
                 if isTakeProfit(value["message"], symbol, j + 1):
                     item["active"] = True
                     item["date"] = value["date"]
-                    item["Period"] = returnSearchValue(
-                        re.search(r"Period: (.+)", value["message"])
-                    )
+                    item["Period"] = subtractTime(msg["date"], value["date"])
                     del all_predicts[i]
+                    isPredictActive = True
                     break
 
+        if isPredictActive:
+            for item in entries:
+                item["active"] = True
+                item["date"] = None
+                item["Period"] = None
 
-# ****************************************************************************************************************************
+# # ****************************************************************************************************************************
 
-# save date to csv file
-folder_name = "all_csv"
-convertToCSVFile(all_messages, "channel_messages", folder_name)
+# # save date to csv file
+# folder_name = "all_csv"
+# convertToCSVFile(all_messages, "channel_messages", folder_name)
 
-# ****************************************************************************************************************************
+# # ****************************************************************************************************************************
 
-# save date to json file
+# # save date to json file
 folder_name = "all_json"
 convertToJsonFile(all_messages, "channel_messages", folder_name)
 convertToJsonFile(grouped_data, "grouped_messages", folder_name)

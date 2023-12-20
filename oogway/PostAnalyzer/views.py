@@ -21,11 +21,6 @@ api_hash = config["api_hash"]
 username = config["username"]
 
 
-# user_input_channel = config["user_input_channel"]
-# peer_channel = PeerChannel(1566206468)
-# my_channel = client.get_entity(peer_channel)
-# 09809225189416
-# my_channel = client.get_entity(peer_channel)
 class DateTimeEncoder(json.JSONEncoder):
     def default(self, o):
         if isinstance(o, datetime):
@@ -65,13 +60,6 @@ def get_coin_view(request):
 
 
 async def get_user_posts_view(request):
-    # client = await TelegramClient(username, api_id, api_hash).start()
-    # await client.connect()
-    peer_channel = PeerChannel(2101974116)
-    # peer_channel = PeerChannel(1566206468)
-    # my_channel = await client.get_entity(peer_channel)
-    # await client.disconnect()
-
     offset_id = 0
     limit = 100
     all_messages = []
@@ -121,12 +109,20 @@ async def get_user_posts_view(request):
 
         client.add_event_handler(
             handle_new_message,
-            events.NewMessage(chats=[PeerChannel(2101974116), PeerChannel(1566206468)]),
+            events.NewMessage(
+                chats=[
+                    PeerChannel(int(config["CHANNEL_TEST"])),
+                    PeerChannel(int(config["CHANNEL_FEYZ"])),
+                ]
+            ),
         )
         client.add_event_handler(
             handle_message_edit,
             events.MessageEdited(
-                chats=[PeerChannel(2101974116), PeerChannel(1566206468)]
+                chats=[
+                    PeerChannel(int(config["CHANNEL_TEST"])),
+                    PeerChannel(int(config["CHANNEL_FEYZ"])),
+                ]
             ),
         )
         await client.run_until_disconnected()

@@ -11,6 +11,7 @@ from telethon.tl.types import InputChannel
 from itertools import groupby
 from datetime import datetime
 from dotenv import dotenv_values
+
 # ****************************************************************************************************************************
 
 config = dotenv_values(".env")
@@ -25,7 +26,6 @@ client = TelegramClient(username, api_id, api_hash).start()
 
 # user_input_channel = input('enter entity(telegram URL or entity id):')
 
-user_input_channel = int(config["CHANNEL_TEST"])
 peer_channel = PeerChannel(int(config["CHANNEL_FEYZ"]))
 my_channel = client.get_entity(peer_channel)
 
@@ -117,8 +117,8 @@ def remove():
 def isPredictMsg(msg):
     patterns = [
         r"Symbol: (.+)",
-        r"Position: (.+)",
-        r"Leverage: (.+)",
+        # r"Position: (.+)",
+        # r"Leverage: (.+)",
         r"Market: (.+)",
         r"StopLoss: (.+)",
     ]
@@ -187,7 +187,7 @@ def predictParts(string):
 def isEntry(msg, value, symbol):
     entry_price = returnSearchValue(re.search(r"Entry Price: (.+)", msg))
     # for control "average entry".
-    # sth entry_price is different to value. so we should find difference, then calculate error
+    # st entry_price is different to value. so we should find difference, then calculate error
     if entry_price:
         entry_price = float(re.findall(r"\d+\.\d+", entry_price)[0])
         bigger_number = max(entry_price, float(value))
@@ -278,7 +278,7 @@ while not shouldStop:
         # to control msg date time
         message_date = message.date.replace(tzinfo=timezone.utc)
         # end_date = datetime(2023, 10, 19, tzinfo=timezone.utc)
-        end_date = datetime(2023, 11, 1, tzinfo=timezone.utc)
+        end_date = datetime(2023, 10, 24, tzinfo=timezone.utc)
         if message_date < end_date:
             shouldStop = True
             break
@@ -299,7 +299,7 @@ while not shouldStop:
 
 # ****************************************************************************************************************************
 # groupby data according to reply_to_msg_id
-total_messages = all_messages
+total_messages = all_messages.copy()
 total_messages.sort(
     key=lambda x: x["reply_to_msg_id"]
     if x["reply_to_msg_id"] is not None

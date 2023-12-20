@@ -1,6 +1,7 @@
 from telethon.sync import TelegramClient, events
 from dotenv import dotenv_values
 from telethon.tl.types import Message, PeerChannel
+
 config = dotenv_values(".env")
 
 api_id = config["api_id"]
@@ -9,14 +10,16 @@ api_hash = config["api_hash"]
 username = config["username"]
 
 client = TelegramClient(username, api_id, api_hash).start()
-peer_channel = PeerChannel(2101974116)
+peer_channel = PeerChannel(int(config["CHANNEL_TEST"]))
 
-peer_channel1 = PeerChannel(1566206468)
-@client.on(events.NewMessage(chats=[peer_channel,peer_channel1]))
+peer_channel1 = PeerChannel(int(config["CHANNEL_FEYZ"]))
+
+
+@client.on(events.NewMessage(chats=[peer_channel, peer_channel1]))
 async def handle_new_message(event):
     # Handle the new message here
     print(event.message.id)
-    
+
 
 with client:
     client.run_until_disconnected()
