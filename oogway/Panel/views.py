@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
-from PostAnalyzer.models import Channel
+from PostAnalyzer.models import Channel, PostInitial
 
 @login_required(login_url='login')
 def home(request):
@@ -21,3 +21,13 @@ def channel_list(request):
 def channel_detail(request, channel_id):
     channel = Channel.objects.get(pk=channel_id)
     return render(request, 'Channel/channelDetail.html', {'channel': channel})
+
+@login_required(login_url='login')
+def post_list(request):
+    posts = PostInitial.objects.all()
+    return render(request, 'Post/postList.html', {'posts': posts})
+
+@login_required(login_url='login')
+def post_detail(request, post_id):
+    post = PostInitial.objects.get(pk=post_id)
+    return render(request, 'Post/postDetail.html', {'post': post})

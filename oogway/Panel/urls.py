@@ -7,5 +7,7 @@ urlpatterns = [
      path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
      path('channels/', views.channel_list, name='channel_list'),
      path('channels/<int:channel_id>/', views.channel_detail, name='channel_detail'),
+     path('posts/', views.post_list, name='post_list'),
+     path('posts/<int:post_id>/', views.post_detail, name='post_detail'),
      path('', views.home, name='home')
 ]
