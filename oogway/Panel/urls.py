@@ -5,5 +5,7 @@ from django.contrib.auth.views import LogoutView
 urlpatterns = [
      path('login/', views.CustomLoginView.as_view(template_name='login.html'), name='login'),
      path('logout/', LogoutView.as_view(next_page='login'), name='logout'),
+     path('channels/', views.channel_list, name='channel_list'),
+     path('channels/<int:channel_id>/', views.channel_detail, name='channel_detail'),
      path('', views.home, name='home')
 ]
