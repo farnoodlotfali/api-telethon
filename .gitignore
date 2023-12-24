@@ -4,6 +4,7 @@
 /all_csv
 /all_json
 db.sqlite3
-/oogway/PostAnalyzer/__pycache__
-/oogway/oogway/__pycache__
 __pycache__
+migrations
+
+

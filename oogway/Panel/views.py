@@ -1,4 +1,4 @@
-from django.shortcuts import render
+from django.shortcuts import render,get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from PostAnalyzer.models import Channel, PostInitial
@@ -19,12 +19,12 @@ def channel_list(request):
 
 @login_required(login_url='login')
 def channel_detail(request, channel_id):
-    channel = Channel.objects.get(pk=channel_id)
+    channel = get_object_or_404(Channel, channel_id=channel_id)
     return render(request, 'Channel/channelDetail.html', {'channel': channel})
 
 @login_required(login_url='login')
 def post_list(request):
-    posts = PostInitial.objects.all()
+    posts = PostInitial.objects.all().order_by('-id')
     return render(request, 'Post/postList.html', {'posts': posts})
 
 @login_required(login_url='login')

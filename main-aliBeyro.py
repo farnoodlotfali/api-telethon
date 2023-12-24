@@ -191,6 +191,7 @@ def predictParts(string):
         ]
         if profit_values
         else None,
+        "status": "pending",
     }
 
     return data
