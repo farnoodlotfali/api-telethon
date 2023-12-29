@@ -4,7 +4,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Posts</title>
+    <title>Markets</title>
 
     <!-- Font Awesome -->
     <link
@@ -41,11 +41,10 @@
         <section class="content mt-3">
           <div class="container-fluid">
             <div class="row">
-              
               <div class="col-12">
                 <div class="card">
                   <div class="card-header">
-                    <h3 class="card-title">Post Table</h3>
+                    <h3 class="card-title">Market Table</h3>
                   </div>
                   <!-- /.card-header -->
                   <div class="card-body">
@@ -56,70 +55,24 @@
                       <thead>
                         <tr>
                           <th scope="col">Id</th>
-                          <th scope="col">Channel id</th>
-                          <th scope="col">Is Predict Msg</th>
-                          <th scope="col">Msg id</th>
-                          <th scope="col">Msg</th>
-                          <th scope="col">Date</th>
-                          <th scope="col">Edit date</th>
-                          <th scope="col">Reply to msg id</th>
-                          <th scope="col">Actions</th>
+                          <th scope="col">Name</th>
+                          <th scope="col">Created At</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {% for post in posts %}
+                        {% for market in markets %}
                         <tr>
                           <th>
                             <!-- Id -->
-                            {{post.id}}
+                            {{market.id}}
                           </th>
                           <th>
-                            <!-- channel_id -->
-                            <a
-                              class="nav-link"
-                              href="{% url 'Panel:channel_detail' post.channel_id %}"
-                              >{{ post.channel_id}}</a
-                            >
+                            <!-- name -->
+                            {{market.name}}
                           </th>
                           <th>
-                            <!-- is_predict_msg -->
-                            {% if post.is_predict_msg %}
-                            <!-- true -->
-                            <i class="fas fa-check-square text-success"></i>
-                            {% else %}
-                            <i class="fas fa-times text-danger"></i>
-                            {% endif %}
-
-                          </th>
-                          <th>
-                            <!-- message_id -->
-                            {{post.message_id}}
-                          </th>
-                          <th>
-                            <!-- message -->
-                            {{post.message}}
-                          </th>
-                          <th>
-                            <!-- date -->
-                            {{post.date}}
-                          </th>
-                          <th>
-                            {% if post.edit_date %}
-                            <!-- edit_date -->
-                            {{ post.edit_date }}
-                            <!-- else -->
-                            {% else %} _ {% endif %}
-                          </th>
-                          <th>
-                            {% if post.reply_to_msg_id %}
-                            <!-- reply_to_msg_id -->
-                            {{ post.reply_to_msg_id }}
-                            <!-- else -->
-                            {% else %} _ {% endif %}
-                          </th>
-                          <th>
-                            <!-- actions -->
-                           
+                            <!-- created_at -->
+                            {{market.created_at}}
                           </th>
                         </tr>
 
@@ -128,14 +81,8 @@
                       <tfoot>
                         <tr>
                           <th scope="col">Id</th>
-                          <th scope="col">Channel id</th>
-                          <th scope="col">Msg id</th>
-                          <th scope="col">Msg</th>
-                          <th scope="col">Date</th>
-                          <th scope="col">Edit date</th>
-                          <th scope="col">Reply to msg id</th>
+                          <th scope="col">Name</th>
                           <th scope="col">Created At</th>
-                          <th scope="col">Actions</th>
                         </tr>
                       </tfoot>
                     </table>
@@ -186,8 +133,6 @@
       $(function () {
         $("#example1")
           .DataTable({
-            // order: false,
-            order: [[0, "desc"]],
             responsive: true,
             lengthChange: false,
             autoWidth: false,

@@ -1,17 +1,16 @@
 from django.contrib import admin
+
 from .models import (
     Channel,
-    PostInitial,
-    Symbol,
+    EntryTarget,
     Market,
+    Post,
     PostStatus,
     Predict,
+    Symbol,
     TakeProfitTarget,
-    EntryTarget,
-    Post,
 )
 
-admin.site.register(PostInitial)
 admin.site.register(Channel)
 admin.site.register(Symbol)
 admin.site.register(Market)

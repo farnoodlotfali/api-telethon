@@ -4,7 +4,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Posts</title>
+    <title>Predicts</title>
 
     <!-- Font Awesome -->
     <link
@@ -41,11 +41,46 @@
         <section class="content mt-3">
           <div class="container-fluid">
             <div class="row">
-              
+              <!-- filter -->
+              <div class="col-12">
+                <div class="card card-body">
+                  <form class="d-flex justify-content-between">
+                    <div class="">
+                      <a href="{% url 'Panel:predict' %}" class="btn btn-danger btn-outline px-5" >
+                        Reset
+                      </a>
+                      <button class="btn btn-primary px-5" type="submit">
+                        Filter
+                      </button>
+                    </div>
+                    <div class="col-2">
+                      <select
+                        class="w-100 border rounded h-100 px-2"
+                        pl
+                        name="symbol"
+                        id="symbol"
+                      >
+                        <option disabled selected value="-1">
+                          Select Symbol 
+                        </option>
+                        {% for symbol in symbols %}
+                        <option
+                          value="{{symbol.name}}"
+                          {% if symbol_param == symbol.name %}selected="selected"{% endif %}
+                        >
+                          {{symbol.name}}
+                        </option>
+                        {% endfor %}
+                      </select>
+                    </div>
+                  </form>
+                </div>
+              </div>
+
               <div class="col-12">
                 <div class="card">
                   <div class="card-header">
-                    <h3 class="card-title">Post Table</h3>
+                    <h3 class="card-title">Predict Table</h3>
                   </div>
                   <!-- /.card-header -->
                   <div class="card-body">
@@ -56,70 +91,80 @@
                       <thead>
                         <tr>
                           <th scope="col">Id</th>
-                          <th scope="col">Channel id</th>
-                          <th scope="col">Is Predict Msg</th>
-                          <th scope="col">Msg id</th>
-                          <th scope="col">Msg</th>
-                          <th scope="col">Date</th>
-                          <th scope="col">Edit date</th>
-                          <th scope="col">Reply to msg id</th>
+                          <th scope="col">Symbol</th>
+                          <th scope="col">Market</th>
+                          <th scope="col">Position</th>
+                          <th scope="col">Leverage</th>
+                          <th scope="col">StopLoss</th>
+                          <th scope="col">Post (id-message)</th>
+                          <th scope="col">Channel ID</th>
+                          <th scope="col">Created At</th>
                           <th scope="col">Actions</th>
                         </tr>
                       </thead>
                       <tbody>
-                        {% for post in posts %}
+                        {% for predict in predicts %}
                         <tr>
                           <th>
                             <!-- Id -->
-                            {{post.id}}
+                            {{predict.id}}
+                          </th>
+                          <th>
+                            <!-- symbol name -->
+                            {{predict.symbol.name}}
+                          </th>
+                          <th
+                            class="{% if predict.market.name == 'FUTURES' %} text-pink {% else %} text-orange {% endif %}"
+                          >
+                            <!-- market name -->
+                            {{predict.market.name}}
+                          </th>
+                          <th
+                            class="{% if predict.position == 'LONG' %} text-lime {% elif predict.position == 'SHORT' %} text-danger {% else %} text-warning {% endif %}"
+                          >
+                            <!-- position -->
+                            {% if predict.position %}
+                            <!-- has  position -->
+                            {{ predict.position}} {% else %} - {% endif %}
+                          </th>
+                          <th>
+                            <!-- leverage -->
+                            {% if predict.leverage %}
+                            <!-- has  leverage -->
+                            {{ predict.leverage}} {% else %} - {% endif %}
+                          </th>
+                          <th>
+                            <!-- stopLoss -->
+                            {{predict.stopLoss}}
+                          </th>
+                          <th>
+                            <!-- post -->
+                            {{predict.post.id}} - {{predict.post.message_id}}
                           </th>
                           <th>
                             <!-- channel_id -->
-                            <a
-                              class="nav-link"
-                              href="{% url 'Panel:channel_detail' post.channel_id %}"
-                              >{{ post.channel_id}}</a
-                            >
+                            {{predict.post.channel_id}}
                           </th>
                           <th>
-                            <!-- is_predict_msg -->
-                            {% if post.is_predict_msg %}
-                            <!-- true -->
-                            <i class="fas fa-check-square text-success"></i>
-                            {% else %}
-                            <i class="fas fa-times text-danger"></i>
-                            {% endif %}
-
+                            <!-- created_at -->
+                            {{predict.created_at}}
                           </th>
-                          <th>
-                            <!-- message_id -->
-                            {{post.message_id}}
-                          </th>
-                          <th>
-                            <!-- message -->
-                            {{post.message}}
-                          </th>
-                          <th>
-                            <!-- date -->
-                            {{post.date}}
-                          </th>
-                          <th>
-                            {% if post.edit_date %}
-                            <!-- edit_date -->
-                            {{ post.edit_date }}
-                            <!-- else -->
-                            {% else %} _ {% endif %}
-                          </th>
-                          <th>
-                            {% if post.reply_to_msg_id %}
-                            <!-- reply_to_msg_id -->
-                            {{ post.reply_to_msg_id }}
-                            <!-- else -->
-                            {% else %} _ {% endif %}
-                          </th>
-                          <th>
+                          <th class="d-flex">
                             <!-- actions -->
-                           
+                            <a
+                              href="{% url 'Panel:post_detail' predict.post.id %}"
+                              title="See detail"
+                            >
+                              <i class="fas fa-eye text-cyan"></i>
+                            </a>
+                            <a
+                              href="{% url 'Panel:channel_detail' predict.post.channel_id %}"
+                              title="See channel"
+                              class="ml-2"
+                            >
+                              <i class="fas fa-window-maximize text-yellow"></i>
+                            </a>
+                            <!-- <i class="fas fa-2x fa-sync-alt fa-spin"></i> -->
                           </th>
                         </tr>
 
@@ -128,12 +173,13 @@
                       <tfoot>
                         <tr>
                           <th scope="col">Id</th>
-                          <th scope="col">Channel id</th>
-                          <th scope="col">Msg id</th>
-                          <th scope="col">Msg</th>
-                          <th scope="col">Date</th>
-                          <th scope="col">Edit date</th>
-                          <th scope="col">Reply to msg id</th>
+                          <th scope="col">Symbol</th>
+                          <th scope="col">Market</th>
+                          <th scope="col">Position</th>
+                          <th scope="col">Leverage</th>
+                          <th scope="col">StopLoss</th>
+                          <th scope="col">Post (id-message)</th>
+                          <th scope="col">Channel ID</th>
                           <th scope="col">Created At</th>
                           <th scope="col">Actions</th>
                         </tr>
@@ -186,17 +232,22 @@
       $(function () {
         $("#example1")
           .DataTable({
-            // order: false,
-            order: [[0, "desc"]],
             responsive: true,
             lengthChange: false,
             autoWidth: false,
             buttons: ["copy", "csv", "excel", "pdf", "print", "colvis"],
+            // search: {
+            //   search: "12",
+            // },
           })
           .buttons()
           .container()
           .appendTo("#example1_wrapper .col-md-6:eq(0)");
       });
+      // var myVariable = "{{ predicts|length }}";
+      // console.log(myVariable);
+
+      getSymbols();
     </script>
     <script>
       // function logout() {

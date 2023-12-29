@@ -9,19 +9,6 @@ class Channel(models.Model):
         return f"{self.name} {self.channel_id}"
 
 
-class PostInitial(models.Model):
-    created_at = models.DateTimeField(auto_now_add=True)
-    date = models.DateTimeField(max_length=100, editable=True, null=True)
-    channel_id = models.CharField(max_length=50)
-    message = models.CharField(max_length=6000, editable=True, null=True)
-    message_id = models.CharField(max_length=50)
-    reply_to_msg_id = models.CharField(max_length=15, null=True)
-    edit_date = models.DateTimeField(max_length=100, editable=True, null=True)
-
-    def __str__(self):
-        return f"{self.message_id} {self.channel_id}"
-
-
 class Symbol(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     name = models.CharField(max_length=20, editable=True)
@@ -65,8 +52,8 @@ class Predict(models.Model):
     symbol = models.ForeignKey(Symbol, on_delete=models.CASCADE)
     market = models.ForeignKey(Market, on_delete=models.CASCADE)
     status = models.ForeignKey(PostStatus, on_delete=models.CASCADE)
-    position = models.CharField(max_length=50, editable=True)
-    leverage = models.CharField(max_length=50, editable=True)
+    position = models.CharField(max_length=50, editable=True, null=True)
+    leverage = models.CharField(max_length=50, editable=True, null=True)
     stopLoss = models.CharField(max_length=50, editable=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
