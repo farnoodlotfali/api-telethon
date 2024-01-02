@@ -4,6 +4,7 @@ from asgiref.sync import sync_to_async
 from telethon.tl.types import Message, PeerChannel
 
 from ..models import (
+    Channel,
     EntryTarget,
     Market,
     Post,
@@ -13,9 +14,12 @@ from ..models import (
     TakeProfitTarget,
 )
 from ..Utility.utils import returnSearchValue
+from .BingXApiClass import BingXApiClass
 
 
 class AliBeyranvand:
+    bingx = BingXApiClass()
+
     def isPredictMsg(self, msg):
         # for futures
         patterns_futures = [
@@ -118,9 +122,12 @@ class AliBeyranvand:
         symbol_match = re.search(
             r"Pair: #(.+)" if isSpot else r"📌 #(.+)", string, re.IGNORECASE
         )
+        symbol_match = (
+            returnSearchValue(symbol_match).strip().replace("/", "").split("USDT")[0]
+        )
         symbol_value, symbol_created = await sync_to_async(
             Symbol.objects.get_or_create
-        )(name=returnSearchValue(symbol_match).strip().replace("/", ""))
+        )(asset=symbol_match)
 
         # position
         position_match = "Buy" if isSpot else self.findPosition(string)
@@ -163,8 +170,11 @@ class AliBeyranvand:
         newPredict = Predict(**PredictData)
         await sync_to_async(newPredict.save)()
 
+        first_entry_value = None
         if entry_values:
             for i, value in enumerate(entry_values):
+                if i == 0:
+                    first_entry_value = value
                 entryData = EntryTarget(
                     **{
                         "post": post,
@@ -177,8 +187,11 @@ class AliBeyranvand:
                 )
                 await sync_to_async(entryData.save)()
 
+        first_tp_value = None
         if profit_values:
             for i, value in enumerate(profit_values):
+                if i == 0:
+                    first_tp_value = value
                 takeProfitData = TakeProfitTarget(
                     **{
                         "post": post,
@@ -190,14 +203,39 @@ class AliBeyranvand:
                     }
                 )
                 await sync_to_async(takeProfitData.save)()
+        
+        if post.channel.can_trade:
+
+            # set order in BingX
+            crypto = newPredict.symbol.name
+            size = newPredict.symbol.size
+            leverage = re.findall(r"\d+", newPredict.leverage)[0]
+            pos = newPredict.position
+            margin_mode = self.bingx.set_margin_mode(crypto, "ISOLATED")
+            # set_levarage = self.bingx.set_levarage(crypto, pos, leverage)
+            set_levarage = self.bingx.set_levarage(crypto, pos, 1)
+
+            order_data = self.bingx.open_limit_order(
+                crypto,
+                pos,
+                first_entry_value,
+                size,
+                tp=first_tp_value,
+                sl=newPredict.stopLoss,
+            )
+            newPredict.order_id = order_data["orderId"]
+        await sync_to_async(newPredict.save)()
 
         return PredictData
 
     async def extract_data_from_message(self, message):
         if isinstance(message, Message):
             is_predict_msg = self.isPredictMsg(message.message)
+            channel = await sync_to_async(Channel.objects.get)(
+                channel_id=message.peer_id.channel_id
+            )
             PostData = {
-                "channel_id": message.peer_id.channel_id,
+                "channel": channel,
                 "date": message.date,
                 "message_id": message.id,
                 "message": message.message,

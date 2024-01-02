@@ -1,23 +1,28 @@
-from telethon.tl.types import Message
-from ..models import (
-    Post,
-    Symbol,
-    Market,
-    EntryTarget,
-    Predict,
-    TakeProfitTarget,
-    PostStatus,
-)
-from asgiref.sync import sync_to_async
-import requests
 import re
 
+import requests
+from asgiref.sync import sync_to_async
+from telethon.tl.types import Message
 
-def returnSearchValue(val):
-    return val.group(1) if val else None
+from ..models import (
+    Channel,
+    EntryTarget,
+    Market,
+    Post,
+    PostStatus,
+    Predict,
+    Symbol,
+    TakeProfitTarget,
+)
+from ..Utility.utils import returnSearchValue
+from .BingXApiClass import BingXApiClass
+
+# ****************************************************************************************************************************
 
 
 class FeyzianMsg:
+    bingx = BingXApiClass()
+
     # determine if a message is a predict message or not
     def isPredictMsg(self, msg):
         patterns = [
@@ -162,9 +167,13 @@ class FeyzianMsg:
 
         # symbol
         symbol_match = re.search(r"Symbol: #(.+)", string)
+        symbol_match = (
+            returnSearchValue(symbol_match).strip().replace("/", "").split("USDT")[0]
+        )
         symbol_value, symbol_created = await sync_to_async(
             Symbol.objects.get_or_create
-        )(name=returnSearchValue(symbol_match).strip().replace("/", ""))
+        )(asset=symbol_match)
+
         #  market
         market_match = re.search(r"Market: (.+)", string)
         market_value, market_created = await sync_to_async(
@@ -204,13 +213,15 @@ class FeyzianMsg:
             "leverage": returnSearchValue(leverage_match),
             "stopLoss": returnSearchValue(stopLoss_match),
             "status": status_value,  # PENDING = 1
+            "order_id": None,
         }
         newPredict = Predict(**PredictData)
 
-        await sync_to_async(newPredict.save)()
-
+        first_entry_value = None
         if entry_values:
             for i, value in enumerate(entry_values):
+                if i == 0:
+                    first_entry_value = value
                 entryData = EntryTarget(
                     **{
                         "post": post,
@@ -223,8 +234,12 @@ class FeyzianMsg:
                 )
                 await sync_to_async(entryData.save)()
 
+        first_tp_value = None
         if profit_values:
             for i, value in enumerate(profit_values):
+                if i == 0:
+                    first_tp_value = value
+
                 takeProfitData = TakeProfitTarget(
                     **{
                         "post": post,
@@ -236,14 +251,39 @@ class FeyzianMsg:
                     }
                 )
                 await sync_to_async(takeProfitData.save)()
+        
+        if post.channel.can_trade:
+            # set order in BingX
+            crypto = newPredict.symbol.name
+            size = newPredict.symbol.size
+            leverage = re.findall(r"\d+", newPredict.leverage)[0]
+            pos = newPredict.position
+            margin_mode = self.bingx.set_margin_mode(crypto, "ISOLATED")
+            set_levarage = self.bingx.set_levarage(crypto, pos, 1)
+            # set_levarage = self.bingx.set_levarage(crypto, pos, leverage)
 
-        return PredictData
+            order_data = self.bingx.open_limit_order(
+                crypto,
+                pos,
+                first_entry_value,
+                size,
+                tp=first_tp_value,
+                sl=newPredict.stopLoss,
+            )
+            newPredict.order_id = order_data["orderId"]
+
+        await sync_to_async(newPredict.save)()
+
+        return newPredict
 
     async def extract_data_from_message(self, message):
         if isinstance(message, Message):
             is_predict_msg = self.isPredictMsg(message.message)
+            channel = await sync_to_async(Channel.objects.get)(
+                channel_id=message.peer_id.channel_id
+            )
             PostData = {
-                "channel_id": message.peer_id.channel_id,
+                "channel": channel if channel else None,
                 "date": message.date,
                 "message_id": message.id,
                 "message": message.message,
@@ -259,7 +299,8 @@ class FeyzianMsg:
             # predict msg
             if is_predict_msg:
                 await self.predictParts(message.message, post)
-                # entry msg
+
+            # entry msg
             elif await self.isEntry(post):
                 pass
                 # take profit msg

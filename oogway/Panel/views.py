@@ -1,17 +1,25 @@
+from bingx.api import BingxAPI
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.core import serializers
 from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
+from dotenv import dotenv_values
 from PostAnalyzer.models import (
     Channel,
     EntryTarget,
     Market,
     Post,
+    PostStatus,
     Predict,
     Symbol,
     TakeProfitTarget,
 )
+
+config = dotenv_values("../.env")
+API_KEY = config["API_KEY"]
+SECRET_KEY = config["SECRET_KEY"]
+bingx = BingxAPI(API_KEY, SECRET_KEY, timestamp="local")
 
 
 def get_posts_api(request):
@@ -80,6 +88,15 @@ def channel_list(request):
     return render(request, "Channel/channelList.html", {"channels": channels})
 
 
+# channels
+@login_required(login_url="login")
+def change_channel_trade(request, channel_id):
+    channel = Channel.objects.get(channel_id=channel_id)
+    channel.can_trade = not channel.can_trade
+    channel.save()
+    return redirect("Panel:channel_list")
+
+
 # channel detail
 @login_required(login_url="login")
 def channel_detail(request, channel_id):
@@ -120,3 +137,42 @@ def post_detail(request, post_id):
             "take_profits": take_profits,
         },
     )
+
+
+# post detail
+@login_required(login_url="login")
+def save_coins_from_api(request):
+    order_data = bingx.get_all_contracts()
+
+    # for symbol in order_data:
+    #     newSymbol = {
+    #         "name": symbol["symbol"],
+    #         "size": symbol["size"],
+    #         "fee_rate": symbol["feeRate"],
+    #         "currency": symbol["currency"],
+    #         "asset": symbol["asset"],
+    #     }
+    #     newSymbol = Symbol(**newSymbol)
+
+    #     newSymbol.save()
+
+    data = serializers.serialize("json", order_data)
+
+    return JsonResponse(data, safe=False)
+
+
+# cancel order
+@login_required(login_url="login")
+def cancel_order(request, symbol, order_id=None):
+    try:
+        bingx.cancel_order(symbol, order_id)
+        predict = Predict.objects.get(order_id=order_id)
+        cancelStatus = PostStatus.objects.get(name="CANCELED")
+        predict.status = cancelStatus
+        predict.save()
+    except:
+        print("error")
+
+    # data = serializers.serialize("json", order_data)
+
+    return redirect("Panel:predict")

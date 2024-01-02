@@ -96,6 +96,7 @@
                           <th scope="col">Position</th>
                           <th scope="col">Leverage</th>
                           <th scope="col">StopLoss</th>
+                          <th scope="col">Status</th>
                           <th scope="col">Post (id-message)</th>
                           <th scope="col">Channel ID</th>
                           <th scope="col">Created At</th>
@@ -138,12 +139,19 @@
                             {{predict.stopLoss}}
                           </th>
                           <th>
+                            <!-- status -->
+                            <div class="{% if predict.status.name == 'SUCCESS' %} text-lime {% elif predict.status.name == 'FAILED' or  predict.status.name == 'CANCELED' %} text-danger {% else %} text-yellow {% endif %}"
+                            >
+                              {{predict.status}}
+                            </div>
+                          </th>
+                          <th>
                             <!-- post -->
                             {{predict.post.id}} - {{predict.post.message_id}}
                           </th>
                           <th>
                             <!-- channel_id -->
-                            {{predict.post.channel_id}}
+                            {{predict.post.channel.channel_id}}
                           </th>
                           <th>
                             <!-- created_at -->
@@ -158,12 +166,21 @@
                               <i class="fas fa-eye text-cyan"></i>
                             </a>
                             <a
-                              href="{% url 'Panel:channel_detail' predict.post.channel_id %}"
+                              href="{% url 'Panel:channel_detail' predict.post.channel.channel_id %}"
                               title="See channel"
                               class="ml-2"
                             >
                               <i class="fas fa-window-maximize text-yellow"></i>
                             </a>
+                            {% if predict.status.name == 'PENDING' and predict.order_id %}
+                             <a
+                              href="{% url 'Panel:cancel_order' predict.symbol.name predict.order_id %}"
+                              title="Cancel Order"
+                              class="ml-2"
+                            >
+                              <i class="fas fa-ban text-red"></i>
+                            </a>
+                            {% endif %}
                             <!-- <i class="fas fa-2x fa-sync-alt fa-spin"></i> -->
                           </th>
                         </tr>
@@ -178,6 +195,7 @@
                           <th scope="col">Position</th>
                           <th scope="col">Leverage</th>
                           <th scope="col">StopLoss</th>
+                          <th scope="col">Status</th>
                           <th scope="col">Post (id-message)</th>
                           <th scope="col">Channel ID</th>
                           <th scope="col">Created At</th>
@@ -244,10 +262,23 @@
           .container()
           .appendTo("#example1_wrapper .col-md-6:eq(0)");
       });
-      // var myVariable = "{{ predicts|length }}";
-      // console.log(myVariable);
+      
+      function cancelOrder(symbol,order_id) {
+        $.ajax({
+            url: `cancel-order-api/${symbol}/${order_id}/`, // URL mapped to the get_posts view
+            dataType: "json",
+            success: function (response) {
+              // Handle the successful response
+              console.log(JSON.parse(response));
+              // Do something with the posts data, e.g., display it on the page
+            },
+            error: function (xhr, errmsg, err) {
+              // Handle any errors
+              console.log(xhr.status + ": " + xhr.responseText);
+            },
+          });
+      }
 
-      getSymbols();
     </script>
     <script>
       // function logout() {

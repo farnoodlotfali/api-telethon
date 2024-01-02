@@ -164,11 +164,11 @@
                           Channel ID
                         </b>
                         <a
-                          href="{% url 'Panel:channel_detail' post.channel_id %}"
+                          href="{% url 'Panel:channel_detail' post.channel.channel_id %}"
                           class="float-right"
                           style="cursor: pointer"
                         >
-                          {{ post.channel_id }}
+                          {{ post.channel.channel_id }}
                         </a>
                       </li>
 

@@ -42,45 +42,59 @@
                     </div>
                     <div class="card-body pt-0">
                       <div class="row">
-                        <div class="col-7">
+                        <div class="col-8">
                           <h2 class="lead"><b>{{ channel.name }}</b></h2>
-                          <p class="text-muted text-sm">
-                            <b>About: </b> Web Designer / UX / Graphic Artist /
-                            Coffee Lover
-                          </p>
-                          <ul class="ml-4 mb-0 fa-ul text-muted">
-                            <li class="small">
-                              <span class="fa-li"
-                                ><i class="fas fa-lg fa-building"></i
-                              ></span>
-                              Address: Demo Street 123, Demo City 04312, NJ
-                            </li>
-                            <li class="small">
-                              <span class="fa-li"
-                                ><i class="fas fa-lg fa-phone"></i
-                              ></span>
-                              Phone #: + 800 - 12 12 23 52
-                            </li>
-                          </ul>
+
+                          <div>
+                            <div
+                              class="d-flex justify-content-between align-items-center"
+                            >
+                              <div>
+                                <i class="fab fa-bitcoin text-yellow"></i>
+                                <span> Can Trade:</span>
+                              </div>
+                              <div
+                                class="mx-3"
+                                style="flex: 1; border-top: 2px dashed"
+                              ></div>
+                              <div>
+                                {% if channel.can_trade %}
+                                <!-- can trade -->
+                                <i class="fa fa-check fa-2x text-lime"></i>
+                                <!-- else -->
+                                {% else %}
+                                <i class="fa fa-times fa-2x text-red"></i>
+                                <!-- end if -->
+                                {% endif %}
+                              </div>
+                            </div>
+                          </div>
                         </div>
-                        <div class="col-5 text-center">
+                        <div class="col-4 text-center">
                           <img
-                            src="../../dist/img/user1-128x128.jpg"
+                            src="{% static 'dist/img/TradeMaster.png' %}"
                             alt="user-avatar"
                             class="img-circle img-fluid"
                           />
                         </div>
                       </div>
                     </div>
-                    <div class="card-footer">
-                      <div class="text-right">
-                        <a
-                          href="{% url 'Panel:channel_detail' channel.channel_id %}"
-                          class="btn btn-sm btn-primary"
-                        >
-                          <i class="fas fa-user"></i> View Profile
-                        </a>
-                      </div>
+                    <div class="card-footer d-flex justify-content-end">
+                      <a
+                        href="{% url 'Panel:change_channel_trade' channel.channel_id %}"
+                        class="btn btn-sm mr-2 {% if channel.can_trade %} btn-danger {% else %}btn-success {% endif %}"
+                      >
+                        <i
+                          class="fa {% if channel.can_trade %} fa-times {% else %}fa-check {% endif %} mr-2"
+                        ></i>
+                        Trade
+                      </a>
+                      <a
+                        href="{% url 'Panel:channel_detail' channel.channel_id %}"
+                        class="btn btn-sm btn-primary"
+                      >
+                        <i class="fas fa-user"></i> View Profile
+                      </a>
                     </div>
                   </div>
                 </div>
@@ -121,19 +135,19 @@
 
     <script src="{% static 'dist/js/adminlte.min.js' %}"></script>
     <script>
-      function logout() {
-          fetch('{% url 'Panel:logout' %}', {
-              method: 'POST',
-              headers: {
-                  'X-CSRFToken': '{{ csrf_token }}'
-              }
-          })
-          .then(response => {
-              if (response.ok) {
-                  window.location.href = '{% url 'Panel:home' %}';
-              }
-          });
-      }
+      // function logout() {
+      //     fetch('{% url 'Panel:logout' %}', {
+      //         method: 'POST',
+      //         headers: {
+      //             'X-CSRFToken': '{{ csrf_token }}'
+      //         }
+      //     })
+      //     .then(response => {
+      //         if (response.ok) {
+      //             window.location.href = '{% url 'Panel:home' %}';
+      //         }
+      //     });
+      // }
     </script>
   </body>
 </html>

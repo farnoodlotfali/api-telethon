@@ -20,8 +20,14 @@ urlpatterns = [
     path("symbol/", views.get_symbols, name="symbol"),
     path("predict/", views.get_predicts, name="predict"),
     path("market/", views.get_markets, name="market"),
-
+    path("save-coins/", views.save_coins_from_api, name="save_coins_from_api"),
+    path("change-channel-trade/<int:channel_id>", views.change_channel_trade, name="change_channel_trade"),
     # api
     path("get-posts-api/", views.get_posts_api, name="get_posts_api"),
     path("get-symbol-api/", views.get_symbols_api, name="get_symbols_api"),
+    path(
+        "cancel-order-api/<str:symbol>/<int:order_id>/",
+        views.cancel_order,
+        name="cancel_order",
+    ),
 ]
