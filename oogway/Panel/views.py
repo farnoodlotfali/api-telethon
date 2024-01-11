@@ -15,7 +15,7 @@ from PostAnalyzer.models import (
     Symbol,
     TakeProfitTarget,
 )
-
+from django.db.models import Count
 config = dotenv_values("../.env")
 API_KEY = config["API_KEY"]
 SECRET_KEY = config["SECRET_KEY"]
@@ -38,7 +38,18 @@ def get_symbols_api(request):
 
 @login_required(login_url="login")
 def home(request):
-    return render(request, "Home/home.html")
+    channels = Channel.objects.all()
+    predicts = Predict.objects.all()
+
+    grouped_predictions = (Predict.objects.values('status__name').annotate(prediction_count=Count('id')))
+   
+    predictsGroup = {f"{group['status__name']}": group['prediction_count'] for group in grouped_predictions}
+    print(predictsGroup)
+    return render(request, "Home/home.html", {"channels": channels,"predicts": predicts,"predictsGroup":predictsGroup})
+
+def advance_test(request):
+    print(12121)
+    return render(request, "advanced.html")
 
 
 class CustomLoginView(LoginView):
@@ -65,19 +76,23 @@ def get_markets(request):
 # predicts
 @login_required(login_url="login")
 def get_predicts(request):
-    predicts = []
+    predicts = Predict.objects.all()
     symbol_param = request.GET.get("symbol")
+    channel_param = request.GET.get("channel")
+    
     if symbol_param:
-        predicts = Predict.objects.filter(symbol__name=symbol_param)
-    else:
-        predicts = Predict.objects.all()
-
+        predicts = predicts.filter(symbol__name=symbol_param)
+    if channel_param:
+        predicts = predicts.filter(post__channel__channel_id=channel_param)
+    
+    
     symbols = Symbol.objects.all()
+    channels = Channel.objects.all()
 
     return render(
         request,
         "Predict/index.html",
-        {"predicts": predicts, "symbols": symbols, "symbol_param": symbol_param},
+        {"predicts": predicts, "symbols": symbols, "symbol_param": symbol_param, "channels": channels, "channel_param": channel_param,},
     )
 
 
@@ -174,5 +189,18 @@ def cancel_order(request, symbol, order_id=None):
         print("error")
 
     # data = serializers.serialize("json", order_data)
+
+    return redirect("Panel:predict")
+
+# change predict status
+@login_required(login_url="login")
+def change_predict_status(request, predict_id, status):
+    try:
+        predict = Predict.objects.get(pk=predict_id)
+        newStatus = PostStatus.objects.get(name=status)
+        predict.status = newStatus
+        predict.save()
+    except:
+        print("error")
 
     return redirect("Panel:predict")

@@ -61,7 +61,7 @@ class Predict(models.Model):
     status = models.ForeignKey(PostStatus, on_delete=models.CASCADE)
     position = models.CharField(max_length=50, editable=True, null=True)
     leverage = models.CharField(max_length=50, editable=True, null=True)
-    stopLoss = models.CharField(max_length=50, editable=True)
+    stopLoss = models.CharField(max_length=50, editable=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     order_id = models.CharField(max_length=50, editable=True, null=True)
 

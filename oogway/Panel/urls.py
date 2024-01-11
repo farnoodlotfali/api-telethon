@@ -21,7 +21,13 @@ urlpatterns = [
     path("predict/", views.get_predicts, name="predict"),
     path("market/", views.get_markets, name="market"),
     path("save-coins/", views.save_coins_from_api, name="save_coins_from_api"),
-    path("change-channel-trade/<int:channel_id>", views.change_channel_trade, name="change_channel_trade"),
+    path(
+        "change-channel-trade/<int:channel_id>",
+        views.change_channel_trade,
+        name="change_channel_trade",
+    ),
+    path("change-predict-status/<int:predict_id>/<str:status>/", views.change_predict_status, name="change_predict_status"),
+
     # api
     path("get-posts-api/", views.get_posts_api, name="get_posts_api"),
     path("get-symbol-api/", views.get_symbols_api, name="get_symbols_api"),
@@ -30,4 +36,8 @@ urlpatterns = [
         views.cancel_order,
         name="cancel_order",
     ),
+
+    # test
+    path("advance/", views.advance_test, name="advance_test"),
+
 ]

@@ -168,11 +168,9 @@ class FeyzianMsg:
         # symbol
         symbol_match = re.search(r"Symbol: #(.+)", string)
         symbol_match = (
-            returnSearchValue(symbol_match).strip().replace("/", "").split("USDT")[0]
+            returnSearchValue(symbol_match).strip().split("USDT")[0].replace("/", "")
         )
-        symbol_value, symbol_created = await sync_to_async(
-            Symbol.objects.get_or_create
-        )(asset=symbol_match)
+        symbol_value = await sync_to_async(Symbol.objects.get)(asset=symbol_match)
 
         #  market
         market_match = re.search(r"Market: (.+)", string)
@@ -251,7 +249,7 @@ class FeyzianMsg:
                     }
                 )
                 await sync_to_async(takeProfitData.save)()
-        
+
         if post.channel.can_trade:
             # set order in BingX
             crypto = newPredict.symbol.name

@@ -27,7 +27,7 @@
           <a href="##" class="h1"><b>Oogway</b></a>
         </div>
         <div class="card-body">
-          <form method="post" action="{% url 'login' %}">
+          <form method="post" action="{% url 'Panel:login' %}">
             {% csrf_token %}
             <div class="input-group mb-3">
               <input

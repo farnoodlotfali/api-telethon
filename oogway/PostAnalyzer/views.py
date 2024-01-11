@@ -11,6 +11,7 @@ from telethon.sync import TelegramClient, events
 from telethon.tl.types import Message, PeerChannel
 
 from .classes.AliBeyranvand import AliBeyranvand
+from .classes.BinanceProMsg import BinanceProMsg
 from .classes.FeyzianMsg import FeyzianMsg
 from .models import (
     EntryTarget,
@@ -95,9 +96,14 @@ async def get_user_posts_view(request):
             handle_new_message,
             events.NewMessage(
                 chats=[
-                    PeerChannel(int(config["CHANNEL_TEST"])),
                     PeerChannel(int(config["CHANNEL_FEYZ"])),
-                    PeerChannel(int(config["CHANNEL_TEST_2"])),
+                    PeerChannel(int(config["CHANNEL_TEST_FEYZIAN"])),
+
+                    PeerChannel(int(config["CHANNEL_ALI_BEY"])),
+                    PeerChannel(int(config["CHANNEL_TEST_ALI_BEYRANVAND"])),
+
+                    PeerChannel(int(config["CHANNEL_BINANCE_PRO"])),
+                    PeerChannel(int(config["CHANNEL_TEST_BINANCE_PRO"])),
                 ]
             ),
         )
@@ -105,9 +111,14 @@ async def get_user_posts_view(request):
         #     handle_message_edit,
         #     events.MessageEdited(
         #         chats=[
-        #             PeerChannel(int(config["CHANNEL_TEST"])),
         #             PeerChannel(int(config["CHANNEL_FEYZ"])),
-        #             PeerChannel(int(config["CHANNEL_TEST_2"])),
+        #             PeerChannel(int(config["CHANNEL_TEST_FEYZIAN"])),
+
+        #             PeerChannel(int(config["CHANNEL_ALI_BEY"])),
+        #             PeerChannel(int(config["CHANNEL_TEST_ALI_BEYRANVAND"])),
+        
+        #             PeerChannel(int(config["CHANNEL_BINANCE_PRO"])),
+        #             PeerChannel(int(config["CHANNEL_TEST_BINANCE_PRO"])),
         #         ]
         #     ),
         # )
@@ -116,17 +127,29 @@ async def get_user_posts_view(request):
     # return JsonResponse({"posts": []})
 
 
-async def channelTest(msg):
+async def channelTestFeyzian(msg):
     p1 = FeyzianMsg()
     await p1.extract_data_from_message(msg)
 
 
-async def channelTest2(msg):
+async def channelTestAliBeyro(msg):
     p1 = AliBeyranvand()
+    await p1.extract_data_from_message(msg)
+
+async def channelTestBinancePro(msg):
+    # print(msg)
+    p1 = BinanceProMsg()
     await p1.extract_data_from_message(msg)
 
 
 options = {
-    int(config["CHANNEL_TEST"]): channelTest,
-    int(config["CHANNEL_TEST_2"]): channelTest2,
+    int(config["CHANNEL_FEYZ"]): channelTestFeyzian,
+    int(config["CHANNEL_TEST_FEYZIAN"]): channelTestFeyzian,
+
+    int(config["CHANNEL_ALI_BEY"]): channelTestAliBeyro,
+    int(config["CHANNEL_TEST_ALI_BEYRANVAND"]): channelTestAliBeyro,
+
+    int(config["CHANNEL_BINANCE_PRO"]): channelTestBinancePro,
+    int(config["CHANNEL_TEST_BINANCE_PRO"]): channelTestBinancePro,
+
 }

@@ -1,5 +1,5 @@
-from telethon.sync import TelegramClient, events
 from dotenv import dotenv_values
+from telethon.sync import TelegramClient, events
 from telethon.tl.types import Message, PeerChannel
 
 config = dotenv_values(".env")
@@ -10,7 +10,7 @@ api_hash = config["api_hash"]
 username = config["username"]
 
 client = TelegramClient(username, api_id, api_hash).start()
-peer_channel = PeerChannel(int(config["CHANNEL_TEST"]))
+peer_channel = PeerChannel(int(config["CHANNEL_TEST_FEYZIAN"]))
 
 peer_channel1 = PeerChannel(int(config["CHANNEL_FEYZ"]))
 

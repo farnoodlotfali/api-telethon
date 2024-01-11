@@ -24,6 +24,12 @@
       rel="stylesheet"
       href="{% static 'plugins/datatables-buttons/css/buttons.bootstrap4.min.css' %}"
     />
+     <!-- Select2 -->
+    <link
+     rel="stylesheet"
+     href="{% static 'plugins/select2/css/select2.min.css' %}"
+    />
+ 
     <!-- Theme style -->
     <link rel="stylesheet" href="{% static 'dist/css/adminlte.min.css' %}" />
   </head>
@@ -44,8 +50,8 @@
               <!-- filter -->
               <div class="col-12">
                 <div class="card card-body">
-                  <form class="d-flex justify-content-between">
-                    <div class="">
+                  <form class="row ">
+                    <div class="col-4">
                       <a href="{% url 'Panel:predict' %}" class="btn btn-danger btn-outline px-5" >
                         Reset
                       </a>
@@ -53,26 +59,54 @@
                         Filter
                       </button>
                     </div>
+                    <div class="col-4"></div>
                     <div class="col-2">
-                      <select
-                        class="w-100 border rounded h-100 px-2"
-                        pl
-                        name="symbol"
-                        id="symbol"
-                      >
-                        <option disabled selected value="-1">
-                          Select Symbol 
-                        </option>
-                        {% for symbol in symbols %}
-                        <option
-                          value="{{symbol.name}}"
-                          {% if symbol_param == symbol.name %}selected="selected"{% endif %}
+
+                      <div class="select2-lime">
+                        <select
+                          class="select2"
+                          data-placeholder="Select a Channel"
+                          data-dropdown-css-class="select2-lime"
+                          style="width: 100%"
+                          name="channel"
+                          id="channel"
                         >
-                          {{symbol.name}}
-                        </option>
-                        {% endfor %}
-                      </select>
+                          <option></option>
+                          {% for channel in channels %}
+                            <option
+                              value="{{channel.channel_id}}"
+                              {% if channel_param == channel.channel_id %}selected="selected"{% endif %}
+                            >
+                              {{channel.name}}
+                            </option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                      
+                  
                     </div>
+                    <div class="col-2">
+                      <div class="select2-purple">
+                        <select
+                          class="select2"
+                          data-placeholder="Select a Symbol"
+                          data-dropdown-css-class="select2-purple"
+                          style="width: 100%"
+                          name="symbol"
+                          id="symbol"
+                        >
+                          <option></option>
+                          {% for symbol in symbols %}
+                            <option
+                              value="{{symbol.name}}"
+                              {% if symbol_param == symbol.name %}selected="selected"{% endif %}
+                            >
+                              {{symbol.name}}
+                            </option>
+                          {% endfor %}
+                        </select>
+                      </div>
+                    </div>  
                   </form>
                 </div>
               </div>
@@ -140,9 +174,10 @@
                           </th>
                           <th>
                             <!-- status -->
-                            <div class="{% if predict.status.name == 'SUCCESS' %} text-lime {% elif predict.status.name == 'FAILED' or  predict.status.name == 'CANCELED' %} text-danger {% else %} text-yellow {% endif %}"
+                            <div
+                             class="{% if predict.status.name == 'SUCCESS' %} text-lime {% elif predict.status.name == 'FAILED' or  predict.status.name == 'CANCELED' %} text-danger {% else %} text-yellow {% endif %}"
                             >
-                              {{predict.status}}
+                              {{predict.status.name}}
                             </div>
                           </th>
                           <th>
@@ -172,6 +207,25 @@
                             >
                               <i class="fas fa-window-maximize text-yellow"></i>
                             </a>
+                            {% if predict.status.name != 'FAILED'%}
+                              <a
+                                href="{% url 'Panel:change_predict_status' predict.id 'FAILED' %}"
+                                title="Fail"
+                                class="ml-2" >
+                                <i class=" far fa-sad-tear text-red"></i>
+                              </a>
+                            {% endif %}
+
+                            {% if predict.status.name != 'SUCCESS'%}
+                              <a
+                                href="{% url 'Panel:change_predict_status' predict.id 'SUCCESS' %}"
+                                title="Success"
+                                class="ml-2" >
+                                <i class="far fa-smile-beam text-lime"></i>
+                              </a>
+                            {% endif %}
+                            
+                            
                             {% if predict.status.name == 'PENDING' and predict.order_id %}
                              <a
                               href="{% url 'Panel:cancel_order' predict.symbol.name predict.order_id %}"
@@ -181,6 +235,7 @@
                               <i class="fas fa-ban text-red"></i>
                             </a>
                             {% endif %}
+                           
                             <!-- <i class="fas fa-2x fa-sync-alt fa-spin"></i> -->
                           </th>
                         </tr>
@@ -242,11 +297,23 @@
     <script src="{% static 'plugins/datatables-buttons/js/buttons.html5.min.js' %}"></script>
     <script src="{% static 'plugins/datatables-buttons/js/buttons.print.min.js' %}"></script>
     <script src="{% static 'plugins/datatables-buttons/js/buttons.colVis.min.js' %}"></script>
-
+    <!-- Select2 -->
+    <script src="{% static 'plugins/select2/js/select2.full.min.js' %}"></script>
     <script src="{% static 'dist/js/adminlte.min.js' %}"></script>
 
     <!-- Page specific script -->
     <script>
+        $(function () {
+        //Initialize Select2 Elements
+        $(".select2").select2();
+
+        //Initialize Select2 Elements
+        $(".select2bs4").select2({
+          theme: "bootstrap4",
+        });
+       
+      });
+      
       $(function () {
         $("#example1")
           .DataTable({
@@ -257,11 +324,25 @@
             // search: {
             //   search: "12",
             // },
+            order: [[0, "desc"]],
           })
           .buttons()
           .container()
           .appendTo("#example1_wrapper .col-md-6:eq(0)");
       });
+
+      // function changeStatus(e,id) {
+      //   $.ajax({
+      //       url: `/panel/change-predict-status/${id}/${e.value}/`,
+      //       dataType: "json",
+      //       success: function (response) {
+             
+      //       },
+      //       error: function (xhr, errmsg, err) {
+      //         console.log(xhr.status + ": " + xhr.responseText);
+      //       },
+      //     });
+      // }
       
       function cancelOrder(symbol,order_id) {
         $.ajax({
@@ -269,7 +350,6 @@
             dataType: "json",
             success: function (response) {
               // Handle the successful response
-              console.log(JSON.parse(response));
               // Do something with the posts data, e.g., display it on the page
             },
             error: function (xhr, errmsg, err) {
@@ -280,20 +360,6 @@
       }
 
     </script>
-    <script>
-      // function logout() {
-      //     fetch('{% url 'Panel:logout' %}', {
-      //         method: 'POST',
-      //         headers: {
-      //             'X-CSRFToken': '{{ csrf_token }}'
-      //         }
-      //     })
-      //     .then(response => {
-      //         if (response.ok) {
-      //             window.location.href = '{% url 'Panel:home' %}';
-      //         }
-      //     });
-      // }
-    </script>
+    
   </body>
 </html>

@@ -17,6 +17,7 @@
   <body
     class="hold-transition sidebar-mini layout-fixed dark-mode sidebar-collapse"
   >
+    {% csrf_token %}
     <!-- Site wrapper -->
     <div class="wrapper">
       {% include 'Components/header.html' %}
@@ -80,6 +81,7 @@
                       </div>
                     </div>
                     <div class="card-footer d-flex justify-content-end">
+                      <!-- onclick="changeTradeStatus('{{channel}}')" -->
                       <a
                         href="{% url 'Panel:change_channel_trade' channel.channel_id %}"
                         class="btn btn-sm mr-2 {% if channel.can_trade %} btn-danger {% else %}btn-success {% endif %}"
@@ -87,7 +89,9 @@
                         <i
                           class="fa {% if channel.can_trade %} fa-times {% else %}fa-check {% endif %} mr-2"
                         ></i>
-                        Trade
+                        {% if channel.can_trade %} Close {% else %}Open
+                        <!-- end -->
+                        {% endif %} Trade
                       </a>
                       <a
                         href="{% url 'Panel:channel_detail' channel.channel_id %}"
@@ -135,6 +139,23 @@
 
     <script src="{% static 'dist/js/adminlte.min.js' %}"></script>
     <script>
+      function changeTradeStatus(channel) {
+        console.log(channel);
+        $.ajax({
+          url: `/channel/${channel.channel_id}/`, // URL mapped to the get_posts view
+          dataType: "json",
+          method: "PUT",
+          success: function (response) {
+            // Handle the successful response
+            // console.log(JSON.parse(response));
+            // Do something with the posts data, e.g., display it on the page
+          },
+          error: function (xhr, errmsg, err) {
+            // Handle any errors
+            // console.log(xhr.status + ": " + xhr.responseText);
+          },
+        });
+      }
       // function logout() {
       //     fetch('{% url 'Panel:logout' %}', {
       //         method: 'POST',

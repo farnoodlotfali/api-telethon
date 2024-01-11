@@ -1,7 +1,7 @@
 import re
 
 from asgiref.sync import sync_to_async
-from telethon.tl.types import Message, PeerChannel
+from telethon.tl.types import Message
 
 from ..models import (
     Channel,
@@ -125,9 +125,7 @@ class AliBeyranvand:
         symbol_match = (
             returnSearchValue(symbol_match).strip().replace("/", "").split("USDT")[0]
         )
-        symbol_value, symbol_created = await sync_to_async(
-            Symbol.objects.get_or_create
-        )(asset=symbol_match)
+        symbol_value = await sync_to_async(Symbol.objects.get)(asset=symbol_match)
 
         # position
         position_match = "Buy" if isSpot else self.findPosition(string)
@@ -203,9 +201,8 @@ class AliBeyranvand:
                     }
                 )
                 await sync_to_async(takeProfitData.save)()
-        
-        if post.channel.can_trade:
 
+        if post.channel.can_trade:
             # set order in BingX
             crypto = newPredict.symbol.name
             size = newPredict.symbol.size
