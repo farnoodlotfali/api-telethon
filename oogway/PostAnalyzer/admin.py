@@ -9,6 +9,7 @@ from .models import (
     Predict,
     Symbol,
     TakeProfitTarget,
+    SettingConfig
 )
 
 admin.site.register(Channel)
@@ -19,5 +20,5 @@ admin.site.register(Predict)
 admin.site.register(TakeProfitTarget)
 admin.site.register(EntryTarget)
 admin.site.register(Post)
-
+admin.site.register(SettingConfig)
 # Register your models here.

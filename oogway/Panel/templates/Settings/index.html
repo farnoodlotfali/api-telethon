@@ -1,0 +1,116 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- <title>AdminLTE 3 | Validation Form</title> -->
+
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="{% static 'plugins/fontawesome-free/css/all.min.css' %}"
+    />
+    <!-- Theme style -->
+    <link rel="stylesheet" href="{% static 'dist/css/adminlte.min.css' %}" />
+  </head>
+  <body
+    class="hold-transition sidebar-mini layout-fixed dark-mode sidebar-collapse"
+  >
+    {% include 'Components/header.html' %}
+    <!-- sidebar -->
+    {% include 'Components/sidebar.html' %}
+    <div class="wrapper">
+      <!-- Content Wrapper. Contains page content -->
+      <div class="content-wrapper mt-2">
+        <!-- Main content -->
+        <section class="content">
+          <div class="container-fluid">
+            <div class="row">
+              <!-- left column -->
+              <div class="col-md-12">
+                <!-- jquery validation -->
+                <div class="card card-primary">
+                  <div class="card-header">
+                    <h3 class="card-title">
+                      <i class="fas fa-cog mr-1"></i>
+                      Settings
+                    </h3>
+                  </div>
+                  <!-- /.card-header -->
+                  <!-- form start -->
+                  <form id="quickForm" method="post" action="{% url 'Panel:update_settings' %}">
+                    {% csrf_token %}
+                    <div class="card-body">
+                      <div class="row">
+                        <div class="col-3 form-group">
+                          <label for="size_times_by">Size Multiply</label>
+                          <input
+                            type="tel"
+                            name="size_times_by"
+                            class="form-control"
+                            id="size_times_by"
+                            value="{{setting.size_times_by}}"
+                          />
+                          <small class="text-muted" >A number that Multiply by volume in opening position</small>
+                        </div>
+                        <div class="col-3 form-group d-flex flex-column">
+                          <label for="allow_channels">
+                            Channels Can Trade
+                          </label>
+                          <input
+                            type="checkbox"
+                            name="allow_channels"
+                            id="allow_channels"
+                            {% if setting.allow_channels_set_order %} checked {% endif %}
+                            data-bootstrap-switch
+                            data-off-color="danger"
+                            data-on-color="success"
+                            value="{{ setting.allow_channels_set_order }}"
+                          />
+                          <small class="text-muted mt-3" >Allow channels set order </small>
+                        </div>
+                      
+                      </div>
+                    </div>
+                    <!-- /.card-body -->
+                    <div class="card-footer">
+                      <button type="submit" class="btn btn-primary">
+                        Submit
+                      </button>
+                    </div>
+                  </form>
+                </div>
+                <!-- /.card -->
+              </div>
+            </div>
+            <!-- /.row -->
+          </div>
+          <!-- /.container-fluid -->
+        </section>
+        <!-- /.content -->
+      </div>
+    </div>
+    <!-- ./wrapper -->
+
+    <!-- jQuery -->
+    <script src="{% static 'plugins/jquery/jquery.min.js' %}"></script>
+    <!-- Bootstrap 4 -->
+    <script src="{% static 'plugins/bootstrap/js/bootstrap.bundle.min.js' %}"></script>
+    <!-- Bootstrap Switch -->
+    <script src="{% static 'plugins/bootstrap-switch/js/bootstrap-switch.min.js' %}"></script>
+    <!-- AdminLTE App -->
+    <script src="{% static 'dist/js/adminlte.min.js' %}"></script>
+    <!-- AdminLTE for demo purposes -->
+    <script src="{% static 'dist/js/demo.js' %}"></script>
+    <!-- Page specific script -->
+    <script>
+      $(function () {
+        $("input[data-bootstrap-switch]").each(function () {
+          $(this).bootstrapSwitch("state", $(this).prop("checked"));
+        });
+      });
+    </script>
+  </body>
+</html>

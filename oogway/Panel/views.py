@@ -14,8 +14,9 @@ from PostAnalyzer.models import (
     Predict,
     Symbol,
     TakeProfitTarget,
+    SettingConfig
 )
-from django.db.models import Count
+from django.db.models import Count,Q
 config = dotenv_values("../.env")
 API_KEY = config["API_KEY"]
 SECRET_KEY = config["SECRET_KEY"]
@@ -40,16 +41,17 @@ def get_symbols_api(request):
 def home(request):
     channels = Channel.objects.all()
     predicts = Predict.objects.all()
-
-    grouped_predictions = (Predict.objects.values('status__name').annotate(prediction_count=Count('id')))
-   
-    predictsGroup = {f"{group['status__name']}": group['prediction_count'] for group in grouped_predictions}
-    print(predictsGroup)
-    return render(request, "Home/home.html", {"channels": channels,"predicts": predicts,"predictsGroup":predictsGroup})
+    
+    return render(request, "Home/home.html", {"channels": channels,"predicts": predicts})
 
 def advance_test(request):
-    print(12121)
     return render(request, "advanced.html")
+
+def charts_test(request):
+    return render(request, "chartjs.html")
+
+def validation_test(request):
+    return render(request, "validation.html")
 
 
 class CustomLoginView(LoginView):
@@ -204,3 +206,71 @@ def change_predict_status(request, predict_id, status):
         print("error")
 
     return redirect("Panel:predict")
+
+
+# charts
+def predict_status_chart(request):
+    statuses = PostStatus.objects.all()
+
+    status_dict = dict()
+
+    for status in statuses:
+        status_dict[status.name] = 0
+
+    grouped_predictions = (Predict.objects.values('status__name').annotate(prediction_count=Count('id')))
+
+    for group in grouped_predictions:
+        status_dict[group['status__name']] = group["prediction_count"]
+
+
+    predictsGroup = {
+        "labels": list(status_dict.keys()),
+        "data": list(status_dict.values()),
+    }
+
+    return JsonResponse(predictsGroup)
+
+def channel_predict_status_chart(request):
+    statuses = PostStatus.objects.all()
+
+    channel_counts = Channel.objects.values('name').annotate(
+        **{status.name: Count('post__predict__status', filter=Q(post__predict__status__name=status.name)) for status in statuses}
+    )
+
+    # print(channel_counts)
+
+    channel_status_count_dict = {}
+
+    for channel in channel_counts:
+        channel_name = channel['name']
+        channel_status_count_dict[channel_name] = {
+           status.name: channel[status.name] for status in statuses
+        }
+
+    # print(list(channel_status_count_dict.keys()))
+    # print(list(channel_status_count_dict.values()))
+
+    
+    return JsonResponse({
+        "labels": list(channel_status_count_dict.keys()),
+        "data": list(channel_status_count_dict.values()),
+    })
+
+
+# settings
+@login_required(login_url="login")
+def get_settings(request):
+    setting = SettingConfig.objects.get(id=1)
+    return render(request, "Settings/index.html", {"setting": setting})
+
+@login_required(login_url="login")
+def update_settings(request):
+    settings = SettingConfig.objects.get(id=1)
+    size_times_by_param = float(request.POST.get("size_times_by"))
+    allow_channels_set_order_param = bool(request.POST.get("allow_channels"))
+
+    settings.size_times_by = size_times_by_param
+    settings.allow_channels_set_order = allow_channels_set_order_param
+    settings.save()
+    return redirect("Panel:settings")
+

@@ -13,6 +13,7 @@ from ..models import (
     Predict,
     Symbol,
     TakeProfitTarget,
+    SettingConfig
 )
 from ..Utility.utils import returnSearchValue
 from .BingXApiClass import BingXApiClass
@@ -164,6 +165,8 @@ class FeyzianMsg:
     async def predictParts(self, string, post):
         if string is None or post is None:
             return None
+        
+        settings = await sync_to_async(SettingConfig.objects.get)(id=1)
 
         # symbol
         symbol_match = re.search(r"Symbol: #(.+)", string)
@@ -250,10 +253,10 @@ class FeyzianMsg:
                 )
                 await sync_to_async(takeProfitData.save)()
 
-        if post.channel.can_trade:
+        if post.channel.can_trade and settings.allow_channels_set_order:
             # set order in BingX
             crypto = newPredict.symbol.name
-            size = newPredict.symbol.size
+            size = float(newPredict.symbol.size) * settings.size_times_by
             leverage = re.findall(r"\d+", newPredict.leverage)[0]
             pos = newPredict.position
             margin_mode = self.bingx.set_margin_mode(crypto, "ISOLATED")
@@ -271,7 +274,6 @@ class FeyzianMsg:
             newPredict.order_id = order_data["orderId"]
 
         await sync_to_async(newPredict.save)()
-
         return newPredict
 
     async def extract_data_from_message(self, message):

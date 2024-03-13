@@ -93,3 +93,9 @@ class TakeProfitTarget(models.Model):
 
     def __str__(self):
         return f"{self.post.message_id} {self.value} {self.active}"
+
+class SettingConfig(models.Model):
+    allow_channels_set_order = models.BooleanField(default=False, editable=True, null=True)
+    size_times_by = models.FloatField(default=1, editable=True, null=True)
+    def __str__(self):
+        return f"size_times_by: {self.size_times_by} - allow channels set order:{self.allow_channels_set_order}"
