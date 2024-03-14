@@ -1,6 +1,7 @@
 .env
 .venv
 *.session
+*.session-journal
 /all_csv
 /all_json
 db.sqlite3

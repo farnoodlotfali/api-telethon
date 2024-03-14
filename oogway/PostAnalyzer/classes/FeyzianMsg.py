@@ -15,7 +15,7 @@ from ..models import (
     TakeProfitTarget,
     SettingConfig
 )
-from ..Utility.utils import returnSearchValue
+from ..Utility.utils import returnSearchValue,sizeAmount
 from .BingXApiClass import BingXApiClass
 
 # ****************************************************************************************************************************
@@ -256,25 +256,43 @@ class FeyzianMsg:
         if post.channel.can_trade and settings.allow_channels_set_order:
             # set order in BingX
             crypto = newPredict.symbol.name
-            size = float(newPredict.symbol.size) * settings.size_times_by
+            
             leverage = re.findall(r"\d+", newPredict.leverage)[0]
             pos = newPredict.position
             margin_mode = self.bingx.set_margin_mode(crypto, "ISOLATED")
             set_levarage = self.bingx.set_levarage(crypto, pos, 1)
             # set_levarage = self.bingx.set_levarage(crypto, pos, leverage)
 
-            order_data = self.bingx.open_limit_order(
+            size = float(newPredict.symbol.size) * settings.size_times_by
+            # if value is lower than 5 usdt
+            if float(first_entry_value) < 5: 
+                size = sizeAmount(first_entry_value)
+
+            order_data = await self.open_trade(
                 crypto,
                 pos,
                 first_entry_value,
                 size,
-                tp=first_tp_value,
                 sl=newPredict.stopLoss,
+                tp=first_tp_value,
             )
             newPredict.order_id = order_data["orderId"]
 
         await sync_to_async(newPredict.save)()
         return newPredict
+    
+    async def open_trade(self, pair, position_side, price, volume, sl, tp):
+        print(price, volume, "tp: ",tp,"sl: ", sl, position_side)
+        order_data = self.bingx.open_limit_order(
+            pair,
+            position_side,
+            price,
+            volume,
+            sl,
+            tp,
+        )
+
+        return order_data
 
     async def extract_data_from_message(self, message):
         if isinstance(message, Message):
