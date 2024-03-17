@@ -97,5 +97,7 @@ class TakeProfitTarget(models.Model):
 class SettingConfig(models.Model):
     allow_channels_set_order = models.BooleanField(default=False, editable=True, null=True)
     size_times_by = models.FloatField(default=1, editable=True, null=True)
+    # how much USDT can use in open position
+    max_entry_money = models.FloatField(default=5, editable=True, null=True)
     def __str__(self):
         return f"size_times_by: {self.size_times_by} - allow channels set order:{self.allow_channels_set_order}"

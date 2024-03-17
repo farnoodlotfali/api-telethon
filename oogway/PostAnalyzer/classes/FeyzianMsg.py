@@ -255,19 +255,20 @@ class FeyzianMsg:
 
         if post.channel.can_trade and settings.allow_channels_set_order:
             # set order in BingX
+            max_entry_money = settings.max_entry_money
+
             crypto = newPredict.symbol.name
-            
             leverage = re.findall(r"\d+", newPredict.leverage)[0]
             pos = newPredict.position
             margin_mode = self.bingx.set_margin_mode(crypto, "ISOLATED")
             set_levarage = self.bingx.set_levarage(crypto, pos, 1)
             # set_levarage = self.bingx.set_levarage(crypto, pos, leverage)
 
-            size = float(newPredict.symbol.size) * settings.size_times_by
-            # if value is lower than 5 usdt
-            if float(first_entry_value) < 5: 
-                size = sizeAmount(first_entry_value)
-
+            # 1- size = float(newPredict.symbol.size) * settings.size_times_by
+            # 2- size = float(newPredict.symbol.size) 
+            # 3-
+            size = max_entry_money / float(first_entry_value)
+            
             order_data = await self.open_trade(
                 crypto,
                 pos,
