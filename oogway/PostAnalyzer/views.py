@@ -13,6 +13,7 @@ from telethon.tl.types import Message, PeerChannel
 from .classes.AliBeyranvand import AliBeyranvand
 from .classes.BinanceProMsg import BinanceProMsg
 from .classes.FeyzianMsg import FeyzianMsg
+from .classes.RastadMsg import RastadMsg
 from .models import (
     EntryTarget,
     Market,
@@ -104,6 +105,9 @@ async def get_user_posts_view(request):
 
                     PeerChannel(int(config["CHANNEL_BINANCE_PRO"])),
                     PeerChannel(int(config["CHANNEL_TEST_BINANCE_PRO"])),
+
+                    PeerChannel(int(config["CHANNEL_RASTAD"])),
+                    PeerChannel(int(config["CHANNEL_TEST_RASTAD"])),
                 ]
             ),
         )
@@ -130,6 +134,10 @@ async def get_user_posts_view(request):
 async def channelTestFeyzian(msg):
     p1 = FeyzianMsg()
     await p1.extract_data_from_message(msg)
+    
+async def channelTestRastad(msg):
+    p1 = RastadMsg()
+    await p1.extract_data_from_message(msg)
 
 
 async def channelTestAliBeyro(msg):
@@ -151,5 +159,8 @@ options = {
 
     int(config["CHANNEL_BINANCE_PRO"]): channelTestBinancePro,
     int(config["CHANNEL_TEST_BINANCE_PRO"]): channelTestBinancePro,
+
+    int(config["CHANNEL_RASTAD"]): channelTestRastad,
+    int(config["CHANNEL_TEST_RASTAD"]): channelTestRastad,
 
 }
