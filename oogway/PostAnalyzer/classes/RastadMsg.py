@@ -115,7 +115,7 @@ class RastadMsg:
             "symbol": symbol_value,
             "position": position_match,
             "market": market_value,
-            "leverage": returnSearchValue(leverage_match),
+            "leverage": leverage_match,
             "stopLoss": stopLoss_match,
             "status": status_value,  # PENDING = 1
         }
@@ -180,7 +180,7 @@ class RastadMsg:
                     sl=newPredict.stopLoss,
                     tp=first_tp_value,
                 )
-                # newPredict.order_id = order_data["orderId"]
+                newPredict.order_id = order_data["orderId"]
                 
 
         await sync_to_async(newPredict.save)()
@@ -189,16 +189,16 @@ class RastadMsg:
     
     async def open_trade(self, pair, position_side, price, volume, sl, tp):
         print(price, volume, "tp: ",tp,"sl: ", sl, position_side)
-        # order_data = self.bingx.open_limit_order(
-        #     pair,
-        #     position_side,
-        #     price,
-        #     volume,
-        #     sl,
-        #     tp,
-        # )
+        order_data = self.bingx.open_limit_order(
+            pair,
+            position_side,
+            price,
+            volume,
+            sl,
+            tp,
+        )
 
-        # return order_data
+        return order_data
 
 
     async def extract_data_from_message(self, message):
