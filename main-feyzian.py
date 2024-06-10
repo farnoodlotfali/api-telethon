@@ -282,15 +282,14 @@ while not shouldStop:
         if message_date < end_date:
             shouldStop = True
             break
-        # print(message_date, end_date)
 
         # will download img and save it a folder called "hi"
         # client.download_media(message, "./"+"hi"+"/")
         message_data = extract_data_from_message(message)
         # print(message_data['message'] if message_data else None)
 
-        # all_messages.append(message.to_dict())
-        all_messages.append(message_data)
+        all_messages.append(message.to_dict())
+        # all_messages.append(message_data)
 
     offset_id = messages[len(messages) - 1].id
     total_messages = len(all_messages)
@@ -299,69 +298,69 @@ while not shouldStop:
 
 # ****************************************************************************************************************************
 # groupby data according to reply_to_msg_id
-total_messages = all_messages.copy()
-total_messages.sort(
-    key=lambda x: x["reply_to_msg_id"]
-    if x["reply_to_msg_id"] is not None
-    else float("inf")
-)
-groups = groupby(total_messages, key=lambda x: x["reply_to_msg_id"])
+# total_messages = all_messages.copy()
+# total_messages.sort(
+#     key=lambda x: x["reply_to_msg_id"]
+#     if x["reply_to_msg_id"] is not None
+#     else float("inf")
+# )
+# groups = groupby(total_messages, key=lambda x: x["reply_to_msg_id"])
 
-grouped_data = {str(key): list(group) for key, group in groups}
-del grouped_data["None"]
+# grouped_data = {str(key): list(group) for key, group in groups}
+# del grouped_data["None"]
 
 # ****************************************************************************************************************************
-for msg in predict_messages:
-    if not f'{msg["id"]}' in grouped_data:
-        continue
+# for msg in predict_messages:
+#     if not f'{msg["id"]}' in grouped_data:
+#         continue
 
-    entries = msg["predict"]["Entry Targets"]
-    take_profits = msg["predict"]["Take-Profit Targets"]
-    symbol = msg["predict"]["Symbol"]
+#     entries = msg["predict"]["Entry Targets"]
+#     take_profits = msg["predict"]["Take-Profit Targets"]
+#     symbol = msg["predict"]["Symbol"]
 
-    all_predicts = grouped_data[f'{msg["id"]}'].copy()
-    isEntryActive = False
+#     all_predicts = grouped_data[f'{msg["id"]}'].copy()
+#     isEntryActive = False
 
-    for i, value in enumerate(all_predicts):
-        if isStopLoss(value["message"]):
-            msg["predict"]["status"] = "failed"
-            del all_predicts[i]
-            break
+#     for i, value in enumerate(all_predicts):
+#         if isStopLoss(value["message"]):
+#             msg["predict"]["status"] = "failed"
+#             del all_predicts[i]
+#             break
 
-    for item in entries:
-        for i, value in enumerate(all_predicts):
-            if isEntry(value["message"], item["value"], symbol):
-                item["active"] = True
-                item["date"] = value["date"]
-                item["Period"] = subtractTime(msg["date"], value["date"])
-                del all_predicts[i]
-                isEntryActive = True
-                break
+#     for item in entries:
+#         for i, value in enumerate(all_predicts):
+#             if isEntry(value["message"], item["value"], symbol):
+#                 item["active"] = True
+#                 item["date"] = value["date"]
+#                 item["Period"] = subtractTime(msg["date"], value["date"])
+#                 del all_predicts[i]
+#                 isEntryActive = True
+#                 break
 
-    # there is no take-profit if none of entry points is active
-    if isEntryActive:
-        for j, item in enumerate(take_profits):
-            for i, value in enumerate(all_predicts):
-                if isTakeProfit(value["message"], symbol, j + 1):
-                    item["active"] = True
-                    item["date"] = value["date"]
-                    item["Period"] = returnSearchValue(
-                        re.search(r"Period: (.+)", value["message"])
-                    )
-                    del all_predicts[i]
-                    break
+#     # there is no take-profit if none of entry points is active
+#     if isEntryActive:
+#         for j, item in enumerate(take_profits):
+#             for i, value in enumerate(all_predicts):
+#                 if isTakeProfit(value["message"], symbol, j + 1):
+#                     item["active"] = True
+#                     item["date"] = value["date"]
+#                     item["Period"] = returnSearchValue(
+#                         re.search(r"Period: (.+)", value["message"])
+#                     )
+#                     del all_predicts[i]
+#                     break
 
 
 # ****************************************************************************************************************************
 
 # save date to csv file
 folder_name = "all_csv"
-convertToCSVFile(all_messages, "channel_messages", folder_name)
+# convertToCSVFile(all_messages, "channel_messages", folder_name)
 
 # ****************************************************************************************************************************
 
 # save date to json file
 folder_name = "all_json"
 convertToJsonFile(all_messages, "channel_messages", folder_name)
-convertToJsonFile(grouped_data, "grouped_messages", folder_name)
-convertToJsonFile(predict_messages, "predict_messages", folder_name)
+# convertToJsonFile(grouped_data, "grouped_messages", folder_name)
+# convertToJsonFile(predict_messages, "predict_messages", folder_name)
