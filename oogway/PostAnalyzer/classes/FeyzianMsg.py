@@ -184,9 +184,9 @@ class FeyzianMsg:
 
         status_value = await sync_to_async(PostStatus.objects.get)(name="PENDING")
         # position
-        position_match = re.search(r"Position: (.+)", string)
-        leverage_match = re.search(r"Leverage: (.+)", string)
-        stopLoss_match = re.search(r"StopLoss: (.+)", string)
+        position_match = re.search(r"Position:(.+)", string)
+        leverage_match = re.search(r"Leverage:(.+)", string)
+        stopLoss_match = re.search(r"StopLoss:(.+)", string)
 
         # entry targets
         entry_targets_match = re.search(r"Entry Targets:(.+?)\n\n", string, re.DOTALL)
@@ -209,10 +209,10 @@ class FeyzianMsg:
         PredictData = {
             "post": post,
             "symbol": symbol_value,
-            "position": "Buy" if isSpot else returnSearchValue(position_match),
+            "position": "Buy" if isSpot else returnSearchValue(position_match).replace(" ", ""),
             "market": market_value,
-            "leverage": returnSearchValue(leverage_match),
-            "stopLoss": returnSearchValue(stopLoss_match),
+            "leverage": returnSearchValue(leverage_match).replace(" ", ""),
+            "stopLoss": returnSearchValue(stopLoss_match).replace(" ", ""),
             "status": status_value,  # PENDING = 1
             "order_id": None,
         }
