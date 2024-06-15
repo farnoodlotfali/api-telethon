@@ -234,7 +234,7 @@ class FeyzianMsg:
         symbol = re.search(r"Symbol:\s*#?([A-Z]+)[/\s]?USDT", msg, re.IGNORECASE)
         
         try:
-            return await sync_to_async(Symbol.objects.get)(asset=returnSearchValue(symbol))
+            return await sync_to_async(Symbol.objects.get)(asset=returnSearchValue(symbol).upper())
         except:
             return None
         
