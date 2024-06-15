@@ -56,15 +56,36 @@
                           <small class="text-muted" >A number that show how much USDT can use in open a position</small>
                         </div> 
                         <div class="col-3 form-group">
-                          <label for="size_times_by">Size Multiply</label>
-                          <input
-                            type="tel"
-                            name="size_times_by"
-                            class="form-control"
-                            id="size_times_by"
-                            value="{{setting.size_times_by}}"
-                          />
-                          <small class="text-muted" >A number that Multiply by volume in opening position</small>
+                          <div>
+                            <label for="leverage_effect">
+                              Leverage Effect
+                            </label>
+                            <br>
+                            <input
+                              type="checkbox"
+                              name="leverage_effect"
+                              id="leverage_effect"
+                              {% if setting.leverage_effect %} checked {% endif %}
+                              data-bootstrap-switch
+                              data-off-color="danger"
+                              data-on-color="success"
+                              value="{{ setting.leverage_effect }}"
+                            />
+                            <br>
+                            <small class="text-muted mt-3">If ON, leverage has Effect to a order. else Max leverage will be 1</small>
+                          </div>
+                          <hr class="border-dark"  />
+                          <div>
+                            <label for="max_leverage">Max Leverage</label>
+                            <input
+                              type="tel"
+                              name="max_leverage"
+                              class="form-control"
+                              id="max_leverage"
+                              value="{{setting.max_leverage}}"
+                            />
+                            <small class="text-muted" >A number that times Profit or Loss <u>(Leverage Effect must be ON)</u> </small>
+                        </div>
                         </div>
                         <div class="col-3 form-group d-flex flex-column">
                           <label for="allow_channels">

@@ -37,7 +37,18 @@ class PostStatus(models.Model):
     def __str__(self):
         return f"{self.name}"
 
+class PositionSide(models.Model):
+    name = models.CharField(max_length=50, editable=True) 
 
+    def __str__(self):
+        return f"{self.name}"
+    
+class MarginMode(models.Model):
+    name = models.CharField(max_length=50, editable=True) 
+
+    def __str__(self):
+        return f"{self.name}"
+    
 class Post(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     date = models.DateTimeField(editable=True)
@@ -59,14 +70,16 @@ class Predict(models.Model):
     symbol = models.ForeignKey(Symbol, on_delete=models.CASCADE)
     market = models.ForeignKey(Market, on_delete=models.CASCADE)
     status = models.ForeignKey(PostStatus, on_delete=models.CASCADE)
-    position = models.CharField(max_length=50, editable=True, null=True)
-    leverage = models.CharField(max_length=50, editable=True, null=True)
+    position = models.ForeignKey(PositionSide, on_delete=models.CASCADE,editable=True)
+    margin_mode = models.ForeignKey(MarginMode, on_delete=models.CASCADE, editable=True, null=True,default=None)
+    leverage = models.IntegerField(default=1, editable=True, null=True)
     stopLoss = models.CharField(max_length=50, editable=True, null=True)
+    profit = models.FloatField(default=0, editable=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
     order_id = models.CharField(max_length=50, editable=True, null=True)
 
     def __str__(self):
-        return f"{self.symbol.name} {self.market.name} {self.position} {self.leverage}"
+        return f"{self.symbol.name} {self.market.name} {self.position.name} {self.leverage}"
 
 
 class EntryTarget(models.Model):
@@ -89,6 +102,7 @@ class TakeProfitTarget(models.Model):
     active = models.BooleanField(default=False, editable=True, null=True)
     period = models.CharField(max_length=60, null=True)
     date = models.DateTimeField(editable=True, null=True)
+    profit = models.FloatField(default=0, editable=True, null=True)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -96,8 +110,10 @@ class TakeProfitTarget(models.Model):
 
 class SettingConfig(models.Model):
     allow_channels_set_order = models.BooleanField(default=False, editable=True, null=True)
-    size_times_by = models.FloatField(default=1, editable=True, null=True)
     # how much USDT can use in open position
     max_entry_money = models.FloatField(default=5, editable=True, null=True)
+    max_leverage = models.PositiveBigIntegerField(default=1, editable=True, null=True)
+    leverage_effect = models.BooleanField(default=False, editable=True, null=True)
     def __str__(self):
-        return f"size_times_by: {self.size_times_by} - allow channels set order:{self.allow_channels_set_order}"
+        return f"max_entry_money: {self.max_entry_money} - allow channels set order:{self.allow_channels_set_order}"
+

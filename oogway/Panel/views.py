@@ -182,10 +182,13 @@ def save_coins_from_api(request):
 @login_required(login_url="login")
 def cancel_order(request, symbol, order_id=None):
     try:
-        bingx.cancel_order(symbol, order_id)
+        res = bingx.cancel_order(symbol,order_id, order_id)
+        # res = bingx.cancel_all_orders_of_symbol(symbol)
         predict = Predict.objects.get(order_id=order_id)
         cancelStatus = PostStatus.objects.get(name="CANCELED")
         predict.status = cancelStatus
+        print(111)
+        print(res)
         predict.save()
     except:
         print("error")
@@ -266,11 +269,13 @@ def get_settings(request):
 @login_required(login_url="login")
 def update_settings(request):
     settings = SettingConfig.objects.get(id=1)
-    size_times_by_param = float(request.POST.get("size_times_by"))
+    max_leverage_param = float(request.POST.get("max_leverage"))
+    leverage_effect_param = bool(request.POST.get("leverage_effect"))
     allow_channels_set_order_param = bool(request.POST.get("allow_channels"))
     max_entry_money_param = float(request.POST.get("max_entry_money"))
 
-    settings.size_times_by = size_times_by_param
+    settings.max_leverage = max_leverage_param
+    settings.leverage_effect = leverage_effect_param
     settings.allow_channels_set_order = allow_channels_set_order_param
     settings.max_entry_money = max_entry_money_param
     settings.save()

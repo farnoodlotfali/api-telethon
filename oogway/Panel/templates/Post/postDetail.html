@@ -68,9 +68,9 @@
                           <i class="far fa-clock mr-1 text-warning"></i>
                           Status
                         </b>
-                        <!-- success if id == 2,  failed if id == 3 -->
+                        <!-- success if id == 2,  failed if id == 3, failed with profit if id == 5  -->
                         <strong
-                          class="float-right {% if predict.status.id == 3 %} text-danger {% elif predict.status.id == 2 %} text-success {% endif %}"
+                          class="float-right {% if predict.status.id == 3 %} text-danger {% elif predict.status.id == 2 %} text-success{% elif predict.status.id == 5 %} text-pink {% endif %}"
                         >
                           {{ predict.status.name }}
                           <!-- icon -->
@@ -115,6 +115,13 @@
                           StopLoss
                         </b>
                         <span class="float-right"> {{predict.stopLoss}} </span>
+                      </li> 
+                      <li class="list-group-item">
+                        <b>
+                          <i class="fa fa-money-bill-wave text-teal mr-1"></i>
+                          Profit
+                        </b>
+                        <span class="float-right"> {{predict.profit}} % </span>
                       </li>
                     </ul>
                   </div>
@@ -219,7 +226,7 @@
                 {% if predict %}
                 <div class="row">
                   <!-- entries -->
-                  <div class="col-md-6">
+                  <div class="col-md-12">
                     <div class="card card-primary">
                       <div class="card-header">
                         <h4 class="text-center text-white">
@@ -292,7 +299,7 @@
                   </div>
 
                   <!-- take_profits -->
-                  <div class="col-md-6">
+                  <div class="col-md-12">
                     <div class="card card-primary">
                       <div class="card-header">
                         <h4 class="text-center text-white">
@@ -309,6 +316,7 @@
                                 <th scope="col">Value</th>
                                 <th scope="col">Active</th>
                                 <th scope="col">Period</th>
+                                <th scope="col">Profit</th>
                                 <th scope="col">Date</th>
                               </tr>
                             </thead>
@@ -343,6 +351,10 @@
                                   <!-- else -->
                                   {% else %} - {% endif %}
                                 </th>
+                                <th>
+                                  <!-- Profit -->
+                                  {{tp.profit}} %
+                                </th> 
                                 <th>
                                   <!-- Date -->
                                   {% if tp.date %}

@@ -1,6 +1,5 @@
-import re
 
-import requests
+import re
 from asgiref.sync import sync_to_async
 from telethon.tl.types import Message
 
@@ -13,13 +12,14 @@ from ..models import (
     Predict,
     Symbol,
     TakeProfitTarget,
-    SettingConfig
+    SettingConfig,
+    PositionSide,
+    MarginMode
 )
-from ..Utility.utils import returnSearchValue,sizeAmount
+from ..Utility.utils import returnSearchValue
 from .BingXApiClass import BingXApiClass
 
 # ****************************************************************************************************************************
-
 
 class FeyzianMsg:
     bingx = BingXApiClass()
@@ -27,11 +27,11 @@ class FeyzianMsg:
     # determine if a message is a predict message or not
     def isPredictMsg(self, msg):
         patterns = [
-            r"Symbol: (.+)",
-            # r"Position: (.+)",
-            # r"Leverage: (.+)",
-            r"Market: (.+)",
-            r"StopLoss: (.+)",
+            r"Symbol:\s*#?([A-Z]+)[/\s]?USDT",
+            r"Take-Profit Targets:([\s\S]+?)(StopLoss|Description)",
+            r"Entry Targets:([\s\S]+?)Take-Profit",
+            r"Market:\s*([A-Z]+)",
+            r"(StopLoss|Description):\s*([\d.]|\w+)",
         ]
 
         return all(re.search(pattern, msg) for pattern in patterns)
@@ -57,9 +57,12 @@ class FeyzianMsg:
         patterns = [r"Entry(.+)", r"Price:(.+)", r"Entry Price: (.+)"]
         check = all(re.search(pattern, PostData.message) for pattern in patterns)
 
+        # Check if the words "achieved" and "all" are not present
+        words_absent = not re.search(r"achieved", PostData.message, re.IGNORECASE) and not re.search(r"\ball\b", PostData.message, re.IGNORECASE)
+       
         # for control "average entry".
         # sometimes entry_price is different to value. so we should find difference, then calculate error
-        if entry_price and check:
+        if entry_price and check and words_absent:
             entry_price_value = float(re.findall(r"\d+\.\d+", entry_price)[0])
 
             entry_target = await sync_to_async(EntryTarget.objects.get)(
@@ -81,34 +84,92 @@ class FeyzianMsg:
                     return True
 
         return False
-
+    
+    # check if post is a AllEntryPrice point or not
+    async def isAllEntryPrice(self, post):
+        if post is None or post.reply_to_msg_id is None:
+            return False   
+        patterns = [r"all entry targets\s", r"achieved\s", r"Entry Price:\s"]
+        check = all(re.search(pattern, post.message, re.IGNORECASE) for pattern in patterns)
+        
+        if check:
+            entry_targets = await sync_to_async(list)(
+                EntryTarget.objects.filter(post__message_id=post.reply_to_msg_id)
+            )
+            for target in entry_targets:
+                if not target.active:
+                    target.active = True
+                    target.date = post.date
+                    await sync_to_async(target.save)()
+                
     # check if post is a Stoploss point or not
     async def isStopLoss(self, post):
         if post is None or post.reply_to_msg_id is None:
             return False
-        if (
-            "Stoploss".lower() in post.message.lower()
-            or "Stop loss".lower() in post.message.lower()
-        ):
+        
+        failed_with_profit_patterns = [
+            r"stoploss\s",
+            r"profit\s",
+            r"reaching\s",
+            r"closed\s",
+        ]
+
+        failed_patterns = [
+            r"stop\s",
+            r"target\s",
+            r"hit\s",
+            r"loss:\s",
+        ]
+
+        check = all(re.search(pattern, post.message, re.IGNORECASE) for pattern in failed_with_profit_patterns)
+        check1 = all(re.search(pattern, post.message, re.IGNORECASE) for pattern in failed_patterns)
+
+        if (check1):
             status_value = await sync_to_async(PostStatus.objects.get)(name="FAILED")
-            predict_value = await sync_to_async(Predict.objects.get)(
+        elif (check):
+            status_value = await sync_to_async(PostStatus.objects.get)(name="FAILED WITH PROFIT")
+           
+        
+        if check or check1:
+            predict = await sync_to_async(Predict.objects.get)(
                 post__message_id=post.reply_to_msg_id
             )
-
-            predict_value.status = status_value
-            await sync_to_async(predict_value.save)()
+            first_entry = await sync_to_async(EntryTarget.objects.get)(
+                post__message_id=post.reply_to_msg_id, index=0  
+            )
+            position_name = await sync_to_async(lambda: predict.position.name)()
+            isSHORT = position_name == "SHORT"
+            predict.status = status_value
+            predict.profit = round(((float(predict.stopLoss)/float(first_entry.value))-1)*100*float(predict.leverage) * (-1 if isSHORT else 1), 5)
+            await sync_to_async(predict.save)()
             return True
+          
         else:
             return False
 
     # check if post is a AllProfit point or not
     async def isAllProfitReached(self, post):
         if post is None or post.reply_to_msg_id is None:
-            return False
-        if (
-            "all take-profit target".lower() in post.message.lower()
-            or "all take profit target".lower() in post.message.lower()
-        ):
+            return False   
+        patterns = [r"all take-profit\s", r"achieved\s", r"profit:\s", r"period:\s"]
+        check = all(re.search(pattern, post.message, re.IGNORECASE) for pattern in patterns)
+
+
+        if check:
+
+            take_profits = await sync_to_async(list)(
+                TakeProfitTarget.objects.filter(post__message_id=post.reply_to_msg_id)
+            )
+            for profit in take_profits:
+                if not profit.active:
+                    profit.active = True
+                    profit.date = post.date
+                    profit.period = returnSearchValue(
+                    re.search(r"Period: (.+)", post.message)
+                    )
+                    await sync_to_async(profit.save)()
+
+
             status_value = await sync_to_async(PostStatus.objects.get)(name="SUCCESS")
             predict_value = await sync_to_async(Predict.objects.get)(
                 post__message_id=post.reply_to_msg_id
@@ -149,6 +210,9 @@ class FeyzianMsg:
             tp_target = await sync_to_async(TakeProfitTarget.objects.get)(
                 post__message_id=PostData.reply_to_msg_id, index=tp_index
             )
+            predict = await sync_to_async(Predict.objects.get)(
+                post__message_id=PostData.reply_to_msg_id
+            )
 
             if tp_target:
                 tp_target.active = True
@@ -156,71 +220,123 @@ class FeyzianMsg:
                 tp_target.period = returnSearchValue(
                     re.search(r"Period: (.+)", PostData.message)
                 )
+
+                predict.profit = tp_target.profit
+                
                 await sync_to_async(tp_target.save)()
+                await sync_to_async(predict.save)()
                 return True
 
         return False
 
+
+    async def findSymbol(self, msg):
+        symbol = re.search(r"Symbol:\s*#?([A-Z]+)[/\s]?USDT", msg, re.IGNORECASE)
+        
+        try:
+            return await sync_to_async(Symbol.objects.get)(asset=returnSearchValue(symbol))
+        except:
+            return None
+        
+    async def findMarket(self, msg):
+        market_match = re.search(r"Market:\s*([A-Z]+)", msg, re.IGNORECASE)
+        
+        try:
+            market_value = await sync_to_async(Market.objects.get)(name=returnSearchValue(market_match).upper())
+            return market_value
+        except:
+            return None
+
+    async def findPosition(self, msg):
+        position_match = re.search(r"Position:\s*([A-Z]+)", msg)
+        
+        try:
+            position_value = await sync_to_async(PositionSide.objects.get)(name=returnSearchValue(position_match).upper())
+            return position_value
+        except:
+            return None
+        
+    async def findLeverage(self, msg):
+        leverage_match = re.search(r"Leverage:\s*(Isolated|Cross)\s*(\d+x)", msg, re.IGNORECASE)
+        if leverage_match:
+            leverage_type = await sync_to_async(MarginMode.objects.get)(name=returnSearchValue(leverage_match).upper())   
+            leverage_value = int(leverage_match.group(2).lower().replace("x",""))    
+        else:
+            leverage_type = None
+            leverage_value = None
+        
+        return leverage_type, leverage_value
+    
+    def findStopLoss(self, msg):
+        return returnSearchValue(re.search(r"StopLoss:\s*([\d.]+)", msg))
+
+    def findEntryTargets(self, msg):
+        match = re.search(r"Entry Targets:([\s\S]+?)Take-Profit", msg, re.IGNORECASE)
+        if match:
+            extracted_data = returnSearchValue(match)
+            return [float(x.strip()) for i, x in enumerate(re.findall(r"(\d+\.\d+|\d+)", extracted_data))  if i % 2 == 1]
+            
+    def findTakeProfits(self, msg):
+        match = re.search(r"Take-Profit Targets:([\s\S]+?)(StopLoss|Description)", msg, re.IGNORECASE)
+        if match:
+            extracted_data = returnSearchValue(match)
+            return [float(x.strip()) for i, x in enumerate(re.findall(r"(\d+\.\d+|\d+)", extracted_data)) if i % 2 == 1]
+        
     # find important parts of a predict message such as symbol or entry point
     async def predictParts(self, string, post):
         if string is None or post is None:
             return None
         
         settings = await sync_to_async(SettingConfig.objects.get)(id=1)
-
+       
         # symbol
-        symbol_match = re.search(r"Symbol: #(.+)", string)
-        symbol_match = (
-            returnSearchValue(symbol_match).strip().split("USDT")[0].replace("/", "")
-        )
-        symbol_value = await sync_to_async(Symbol.objects.get)(asset=symbol_match)
+        symbol_value = await self.findSymbol(string)
 
-        #  market
-        market_match = re.search(r"Market: (.+)", string)
-        market_value, market_created = await sync_to_async(
-            Market.objects.get_or_create
-        )(name=returnSearchValue(market_match).strip().upper())
+        # market
+        market_value= await self.findMarket(string)
         isSpot = market_value.name == "SPOT"
 
-        status_value = await sync_to_async(PostStatus.objects.get)(name="PENDING")
-        # position
-        position_match = re.search(r"Position:(.+)", string)
-        leverage_match = re.search(r"Leverage:(.+)", string)
-        stopLoss_match = re.search(r"StopLoss:(.+)", string)
+        # position, leverage, marginMode
+        position_value = None
+        leverage_value = None
+        marginMode_value = None
+        if not isSpot:
+            position_value = await self.findPosition(string)
+            marginMode_value, leverage_value = await self.findLeverage(string)
+        else:
+            position_value= await sync_to_async(PositionSide.objects.get)(name="BUY")
+        
+        # stopLoss
+        stopLoss_value = self.findStopLoss(string)
 
         # entry targets
-        entry_targets_match = re.search(r"Entry Targets:(.+?)\n\n", string, re.DOTALL)
-        entry_values = (
-            re.findall(r"\d+\.\d+", entry_targets_match.group(1))
-            if entry_targets_match
-            else None
-        )
+        entry_targets_value = self.findEntryTargets(string)
+
+        # status    
+        status_value = await sync_to_async(PostStatus.objects.get)(name="PENDING")
 
         # take_profit targets
-        take_profit_targets_match = re.search(
-            r"Take-Profit Targets:(.+?)\n\n", string, re.DOTALL
-        )
-        profit_values = (
-            re.findall(r"\d+\.\d+", take_profit_targets_match.group(1))
-            if take_profit_targets_match
-            else None
-        )
+        take_profit_targets_value = self.findTakeProfits(string)
 
+        # set predict object to DB
         PredictData = {
             "post": post,
             "symbol": symbol_value,
-            "position": "Buy" if isSpot else returnSearchValue(position_match).replace(" ", ""),
+            "position": position_value,
             "market": market_value,
-            "leverage": returnSearchValue(leverage_match).replace(" ", ""),
-            "stopLoss": returnSearchValue(stopLoss_match).replace(" ", ""),
+            "leverage": leverage_value,
+            "stopLoss": stopLoss_value,
+            "margin_mode": marginMode_value,
+            "profit": 0,
             "status": status_value,  # PENDING = 1
             "order_id": None,
         }
         newPredict = Predict(**PredictData)
 
+        # set entry value objects to DB
         first_entry_value = None
-        if entry_values:
-            for i, value in enumerate(entry_values):
+        if entry_targets_value:
+            for i, value in enumerate(entry_targets_value):
                 if i == 0:
                     first_entry_value = value
                 entryData = EntryTarget(
@@ -234,10 +350,11 @@ class FeyzianMsg:
                     }
                 )
                 await sync_to_async(entryData.save)()
-
+        
+        # set tp value objects to DB
         first_tp_value = None
-        if profit_values:
-            for i, value in enumerate(profit_values):
+        if take_profit_targets_value:
+            for i, value in enumerate(take_profit_targets_value):
                 if i == 0:
                     first_tp_value = value
 
@@ -248,35 +365,40 @@ class FeyzianMsg:
                         "value": value,
                         "active": False,
                         "period": None,
+                        "profit": round(abs(((value/first_entry_value)-1)*100*leverage_value), 5),
                         "date": None,
                     }
                 )
                 await sync_to_async(takeProfitData.save)()
 
-        if post.channel.can_trade and settings.allow_channels_set_order:
-            # set order in BingX
+        if not isSpot and post.channel.can_trade and settings.allow_channels_set_order and leverage_value <= settings.max_leverage:
             max_entry_money = settings.max_entry_money
+            leverage_effect = settings.leverage_effect
 
-            crypto = newPredict.symbol.name
-            leverage = re.findall(r"\d+", newPredict.leverage)[0]
-            pos = newPredict.position
-            margin_mode = self.bingx.set_margin_mode(crypto, "ISOLATED")
-            set_levarage = self.bingx.set_levarage(crypto, pos, 1)
-            # set_levarage = self.bingx.set_levarage(crypto, pos, leverage)
-
-            # 1- size = float(newPredict.symbol.size) * settings.size_times_by
-            # 2- size = float(newPredict.symbol.size) 
-            # 3-
-            size = max_entry_money / float(first_entry_value)
+            pair = symbol_value.name
             
+            leverage_number = leverage_value if leverage_effect else 1
+            position = position_value.name
+
+            # set Margin Mode for a Pair in BingX
+            self.bingx.set_margin_mode(pair, "ISOLATED")
+
+            # set Leverage for a Pair in BingX
+            self.bingx.set_levarage(pair, position, leverage_number)
+          
+            size_volume = max_entry_money / float(first_entry_value)
+            
+            # set order in BingX
             order_data = await self.open_trade(
-                crypto,
-                pos,
-                first_entry_value,
-                size,
-                sl=newPredict.stopLoss,
+                pair,
+                position_side=position,
+                price=first_entry_value,
+                volume=size_volume,
+                sl=stopLoss_value,
                 tp=first_tp_value,
             )
+
+            # save orderId in DB
             newPredict.order_id = order_data["orderId"]
 
         await sync_to_async(newPredict.save)()
@@ -292,6 +414,7 @@ class FeyzianMsg:
             sl,
             tp,
         )
+        print(order_data)
 
         return order_data
 
@@ -322,16 +445,20 @@ class FeyzianMsg:
             # entry msg
             elif await self.isEntry(post):
                 pass
-                # take profit msg
+            # take profit msg
             elif await self.isTakeProfit(post):
                 pass
-                # stop loss msg
+            # stop loss msg
             elif await self.isStopLoss(post):
                 pass
             # All Profit msg
             elif await self.isAllProfitReached(post):
                 pass
+            # All EntryPrice msg
+            elif await self.isAllEntryPrice(post):
+                pass
 
             return PostData
         else:
             return None
+

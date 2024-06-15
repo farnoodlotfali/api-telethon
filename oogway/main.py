@@ -11,7 +11,6 @@ api_id = config["api_id"]
 API_KEY = config["API_KEY"]
 SECRET_KEY = config["SECRET_KEY"]
 
-print(22)
 # It is faster and more efficient to use local timestamps. If you are getting an error try using "server" timestamp.
 bingx = BingxAPI(API_KEY, SECRET_KEY, timestamp="local")
 order_data = bingx.open_limit_order(

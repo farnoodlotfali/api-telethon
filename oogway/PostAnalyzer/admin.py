@@ -9,7 +9,9 @@ from .models import (
     Predict,
     Symbol,
     TakeProfitTarget,
-    SettingConfig
+    SettingConfig,
+    PositionSide,
+    MarginMode
 )
 
 admin.site.register(Channel)
@@ -21,4 +23,6 @@ admin.site.register(TakeProfitTarget)
 admin.site.register(EntryTarget)
 admin.site.register(Post)
 admin.site.register(SettingConfig)
+admin.site.register(PositionSide)
+admin.site.register(MarginMode)
 # Register your models here.

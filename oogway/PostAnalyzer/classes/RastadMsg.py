@@ -167,7 +167,6 @@ class RastadMsg:
                 # set_levarage = self.bingx.set_levarage(crypto, pos, leverage)
                 set_levarage = self.bingx.set_levarage(crypto, pos, 1)
 
-                # 1- size = float(newPredict.symbol.size) * settings.size_times_by
                 # 2- size = float(newPredict.symbol.size) 
                 # 3-
                 size = max_entry_money / float(first_entry_value)
