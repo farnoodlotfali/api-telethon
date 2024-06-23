@@ -16,12 +16,14 @@ from PostAnalyzer.models import (
     TakeProfitTarget,
     SettingConfig
 )
+from telethon.sync import TelegramClient, events
+from telethon.errors import SessionPasswordNeededError
+import asyncio
 from django.db.models import Count,Q
 config = dotenv_values(".env")
 API_KEY = config["API_KEY"]
 SECRET_KEY = config["SECRET_KEY"]
 bingx = BingxAPI(API_KEY, SECRET_KEY, timestamp="local")
-
 
 def get_posts_api(request):
     posts = Post.objects.all()  # Fetch all posts from the database
@@ -281,3 +283,53 @@ def update_settings(request):
     settings.save()
     return redirect("Panel:settings")
 
+
+
+
+async def set_phone_number(phone_number,token):
+    config = dotenv_values(".env")
+
+    api_id = config["api_id"]
+    api_hash = config["api_hash"]
+
+    username = config["username"]
+    print(1)
+    client = TelegramClient(username, api_id, api_hash)
+    print(2)
+    # await client.start()
+    await client.connect()
+    print( client._phone_code_hash)
+    print(3)
+    # Ensure you're authorized
+    if not await client.is_user_authorized():
+        print(4)
+        if not token:
+            await client.send_code_request(phone_number)
+            print(phone_number)
+            print(5)
+        elif token:
+            print(6)
+            try:
+                print(7)
+                await client.send_code_request(phone_number)
+                await client.sign_in(phone_number,token)
+                print(8)
+            except SessionPasswordNeededError:
+                await client.sign_in(password=input('Password: '))
+                
+            print(9)
+    print(10)
+            
+    # me = await client.get_me()
+
+@login_required(login_url="login")
+def getPhoneNumberAndCode(request):
+    phone_number_param = request.POST.get("phone_number")
+    token_param = request.POST.get("token")
+    
+    if phone_number_param:
+        print(11)
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        loop.run_until_complete(set_phone_number(phone_number_param,token_param))
+    return render(request, "test.html", {"phone_number": phone_number_param})

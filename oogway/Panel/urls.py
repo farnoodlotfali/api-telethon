@@ -13,6 +13,8 @@ urlpatterns = [
     ),
     path("logout/", LogoutView.as_view(next_page="login"), name="logout"),
     path("channels/", views.channel_list, name="channel_list"),
+
+
     path("channels/<int:channel_id>/", views.channel_detail, name="channel_detail"),
     path("posts/", views.post_list, name="post_list"),
     path("posts/<int:post_id>/", views.post_detail, name="post_detail"),
@@ -47,5 +49,7 @@ urlpatterns = [
     path("advance/", views.advance_test, name="advance_test"),   
     path("charts/", views.charts_test, name="charts_test"),
     path("validation/", views.validation_test, name="validation_test"),
+    path("test/", views.getPhoneNumberAndCode, name="test"),
+
 
 ]
