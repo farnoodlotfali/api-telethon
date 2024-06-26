@@ -101,8 +101,8 @@ def convertToCSVFile(data, name, folder_name):
 
 
 # will remove all content in a folder
-def remove():
-    folder = "./all_json"
+def remove(folder):
+    
     for filename in os.listdir(folder):
         file_path = os.path.join(folder, filename)
         try:
@@ -313,11 +313,11 @@ while not shouldStop:
 
         # will download img and save it a folder called "hi"
         # client.download_media(message, "./"+"hi"+"/")
-        # message_data = extract_data_from_message(message)
+        message_data = extract_data_from_message(message)
         # print(message_data['message'] if message_data else None)
 
-        all_messages.append(message.to_dict())
-        # all_messages.append(message_data)
+        # all_messages.append(message.to_dict())
+        all_messages.append(message_data)
 
     offset_id = messages[len(messages) - 1].id
     total_messages = len(all_messages)
@@ -392,7 +392,9 @@ while not shouldStop:
 
 # save date to csv file
 folder_name = "all_csv"
-# convertToCSVFile(all_messages, "channel_messages", folder_name)
+remove(folder_name)
+convertToCSVFile(all_messages, "channel_messages", folder_name)
+convertToCSVFile(predict_messages, "predict_messages", folder_name)
 
 # ****************************************************************************************************************************
 # save date to json file
@@ -400,4 +402,4 @@ folder_name = "all_json"
 convertToJsonFile(all_messages, "channel_messages", folder_name)
 # convertToJsonFile(grouped_data, "grouped_messages", folder_name)
 # convertToJsonFile(grouped_data_with_control["None"], "control", folder_name)
-# convertToJsonFile(predict_messages, "predict_messages", folder_name)
+convertToJsonFile(predict_messages, "predict_messages", folder_name)

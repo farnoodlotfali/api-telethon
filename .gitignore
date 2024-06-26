@@ -8,3 +8,4 @@ migrations
 .venv/
 .tvenv/
 all_json
+all_csv
